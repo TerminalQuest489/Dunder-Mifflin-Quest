@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>📜 SQL Quest: The Office Edition</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="game-container">
+    <div id="intro-screen">
+      <h1>📜 SQL Quest: The Office Edition</h1>
+      <p>You're on a quest to become the <strong>World's Best Paper Salesman</strong>.</p>
+      <p>Your opponent: <strong>Dwight Schrute</strong> — the #1 seller at Dunder Mifflin.</p>
+      <p>Answer SQL questions about sales, quotes, and employees. Solve them fast to unlock XP and Achievements!</p>
+      <button id="start-game-btn">🚀 Start Your Sales Career</button>
+    </div>
+
+    <div id="game-ui" style="display: none;">
+      <h1>💼 Dunder Mifflin SQL Terminal</h1>
+
+      <div id="player-stats">
+        <strong>XP:</strong> <span id="xp">0</span> |
+        <strong>Level:</strong> <span id="level">1</span> |
+        <strong>Achievements:</strong> <span id="achievements">None</span>
+      </div>
+
+      <div id="data-tables">
+        <h2>📊 Dunder Mifflin Sales Data</h2>
+        <table id="sales-table"></table>
+
+        <h2>📜 Michael’s Best Quotes</h2>
+        <table id="quotes-table"></table>
+      </div>
+
+      <div id="mission-area">
+        <h2>🎯 Mission <span id="current-level">1</span>: <span id="mission-question"></span></h2>
+        <button id="start-mission-btn">⏰ Start Timer</button>
+        <div id="timer" class="hidden">Time left: <span id="time-left">0</span>s</div>
+        <input type="text" id="query-input" placeholder="SELECT * FROM sales WHERE employee = 'Dwight Schrute'" disabled />
+        <p id="feedback"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sql.js @0.8.0/dist/sql-wasm.min.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
