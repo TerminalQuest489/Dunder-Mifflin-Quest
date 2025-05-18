@@ -66,14 +66,12 @@ const missions = [
 // Database initialization
 async function initDB() {
   try {
-    // Load sql.js
     const SQL = await initSqlJs({
       locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/${file}`
     });
-
     db = new SQL.Database();
 
-    // Fetch and load real data
+    // Load external data
     const [salesRes, quotesRes] = await Promise.all([
       fetch("data/dunder_mifflin_sales.json"),
       fetch("data/michael_quotes.json")
@@ -94,7 +92,7 @@ async function initDB() {
         [row.character, row.quote, row.season]);
     });
 
-    // Show sample data
+    // Update UI
     updateTable('sales', 50);
     updateTable('quotes', 50);
 
