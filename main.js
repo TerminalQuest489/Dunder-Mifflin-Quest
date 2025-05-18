@@ -1,8 +1,7 @@
+let db;
 let currentMissionIndex = parseInt(localStorage.getItem('currentMission')) || 0;
 let timeLeft = 0;
 let missionInterval;
-let salesData = [];
-let quotesData = [];
 
 // Rewards system
 const rewards = new class {
@@ -23,7 +22,7 @@ const rewards = new class {
     if (!this.achievements.includes(name)) {
       this.achievements.push(name);
       localStorage.setItem('achievements', JSON.stringify(this.achievements));
-      showAchievementToast(`🏆 Achievement Unlocked: ${name}`);
+      alert(`🏆 Achievement Unlocked: ${name}`);
     }
   }
   updateUI() {
@@ -48,55 +47,74 @@ const missions = [
   { question: "Who has the highest average sale amount?", answer: "Dwight Schrute", xp: 250, achievement: "Sales Champion", timeLimit: 25 }
 ];
 
-// Load JSON data
-async function loadData() {
+// Database initialization
+async function initDB() {
   try {
-    const [salesRes, quotesRes] = await Promise.all([
-      fetch('data/dunder_mifflin_sales.json'),
-      fetch('data/michael_quotes.json')
-    ]);
-    salesData = (await salesRes.json()).sales;
-    quotesData = (await quotesRes.json()).quotes;
+    const SQL = await initSqlJs({
+      locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js @0.8.0/dist/${file}`
+    });
+    db = new SQL.Database();
 
-    // Update UI
-    updateTable('sales', salesData.slice(0, 50));
-    updateTable('quotes', quotesData.slice(0, 50));
+    // Load external data
+    const [salesResponse, quoteResponse] = await Promise.all([
+      fetch("data/dunder_mifflin_sales.json"),
+      fetch("data/michael_quotes.json")
+    ]);
+    const salesData = await salesResponse.json();
+    const quotesData = await quoteResponse.json();
+
+    // Create tables
+    db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
+    salesData.sales.forEach(row => {
+      db.run(`INSERT INTO sales VALUES (?, ?, ?, ?)`, 
+        [row.employee, row.product, row.amount, row.client]);
+    });
+
+    db.run("CREATE TABLE quotes (character TEXT, quote TEXT, season INTEGER)");
+    quotesData.quotes.forEach(row => {
+      db.run(`INSERT INTO quotes VALUES (?, ?, ?)`, 
+        [row.character, row.quote, row.season]);
+    });
+
+    updateTable('sales', 50);
+    updateTable('quotes', 50);
 
     // Enable buttons
     document.getElementById("preview-data-btn").disabled = false;
+    document.getElementById("preview-data-btn").textContent = "👀 Show Sample Data";
+
     document.getElementById("start-game-btn").disabled = false;
+    document.getElementById("start-game-btn").textContent = "🚀 Start Your Sales Career";
 
   } catch (error) {
-    console.error("Failed to load data:", error);
-    alert("Failed to load data. Please refresh the page.");
+    console.error("Database initialization failed:", error);
+    alert("Failed to initialize database. Please refresh the page.");
   }
 }
 
-// Table rendering
-function updateTable(tableName, data) {
-  const table = document.getElementById(`${tableName}-table`);
-  table.innerHTML = "";
+// Table management
+function updateTable(tableName, limit = 50) {
+  try {
+    const result = db.exec(`SELECT * FROM ${tableName} LIMIT ${limit}`);
+    const tableElement = document.getElementById(`${tableName}-table`);
+    tableElement.innerHTML = generateTableHTML(result);
+  } catch (error) {
+    console.error('Error updating table:', error);
+  }
+}
 
-  // Get headers
-  const headers = Object.keys(data[0]);
-  const headerRow = document.createElement("tr");
-  headers.forEach(h => {
-    const th = document.createElement("th");
-    th.innerText = h;
-    headerRow.appendChild(th);
-  });
-  table.appendChild(headerRow);
-
-  // Add rows
-  data.forEach(row => {
-    const tr = document.createElement("tr");
-    headers.forEach(h => {
-      const td = document.createElement("td");
-      td.innerText = row[h];
-      tr.appendChild(td);
-    });
-    table.appendChild(tr);
-  });
+function generateTableHTML(result) {
+  if (!result || !result.length) return "";
+  return `
+    <thead><tr>${
+      result[0].columns.map(col => `<th>${col}</th>`).join("")
+    }</tr></thead>
+    <tbody>${
+      result[0].values.map(row => `
+        <tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>
+      `).join("")
+    }</tbody>
+  `;
 }
 
 // Data preview functionality
@@ -105,32 +123,15 @@ function showDataPreview() {
     const previewDiv = document.getElementById('preview-tables');
     previewDiv.classList.remove('hidden');
 
-    // Grouped Sales Preview
-    const employeeSales = salesData.reduce((acc, sale) => {
-      acc[sale.employee] = (acc[sale.employee] || 0) + 1;
-      return acc;
-    }, {});
+    const salesPreview = db.exec("SELECT employee, COUNT(*) as sales FROM sales GROUP BY employee");
+    let html = "<h3>📊 Employee Sales Count</h3>";
+    html += generateTableHTML(salesPreview);
 
-    let html = "<h3>📊 Employee Sales Count</h3><table>";
-    for (const emp in employeeSales) {
-      html += `<tr><td>${emp}</td><td>${employeeSales[emp]}</td></tr>`;
-    }
-    html += "</table>";
-
-    // Grouped Quotes Preview
-    const characterQuotes = quotesData.reduce((acc, q) => {
-      acc[q.character] = (acc[q.character] || 0) + 1;
-      return acc;
-    }, {});
-
-    html += "<h3>📜 Character Quote Count</h3><table>";
-    for (const char in characterQuotes) {
-      html += `<tr><td>${char}</td><td>${characterQuotes[char]}</td></tr>`;
-    }
-    html += "</table>";
+    const quotesPreview = db.exec("SELECT character, COUNT(*) as quotes FROM quotes GROUP BY character");
+    html += "<h3>📜 Character Quote Count</h3>";
+    html += generateTableHTML(quotesPreview);
 
     previewDiv.innerHTML = html;
-
   } catch (error) {
     alert("⚠️ Please wait while we load the data...");
   }
@@ -149,6 +150,9 @@ function loadMission(index) {
   document.getElementById("current-level").innerText = index + 1;
   document.getElementById("mission-question").innerText = missions[index].question;
   document.getElementById("final-answer").value = "";
+  document.getElementById("query-input").value = "";
+  document.getElementById("query-input").disabled = false;
+  document.getElementById("submit-answer").disabled = false;
   document.getElementById("feedback").className = "";
   document.getElementById("feedback").innerHTML = "";
   document.getElementById("timer").classList.add("hidden");
@@ -164,7 +168,6 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
   document.getElementById("timer").classList.remove("hidden");
   document.getElementById("start-mission-btn").disabled = true;
   document.getElementById("submit-answer").disabled = false;
-
   missionInterval = setInterval(() => {
     timeLeft--;
     document.getElementById("time-left").textContent = timeLeft;
@@ -176,26 +179,6 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
   }, 1000);
 });
 
-// Play random correct sound
-function playCorrectSound() {
-  const correctSounds = [
-    'assets/sounds/correct/correct1.mp3',
-    'assets/sounds/correct/correct2.mp3'
-  ];
-  const randomSound = correctSounds[Math.floor(Math.random() * correctSounds.length)];
-  new Audio(randomSound).play();
-}
-
-// Play random incorrect sound
-function playIncorrectSound() {
-  const incorrectSounds = [
-    'assets/sounds/incorrect/wrong1.mp3',
-    'assets/sounds/incorrect/wrong2.mp3'
-  ];
-  const randomSound = incorrectSounds[Math.floor(Math.random() * incorrectSounds.length)];
-  new Audio(randomSound).play();
-}
-
 // Answer checking
 document.getElementById("submit-answer").addEventListener("click", checkAnswer);
 
@@ -204,7 +187,6 @@ function checkAnswer() {
   const correctAnswer = missions[currentMissionIndex].answer.toLowerCase();
 
   if (userAnswer === correctAnswer) {
-    playCorrectSound(); // Play random correct sound
     document.getElementById("feedback").className = "feedback-correct";
     document.getElementById("feedback").innerHTML = `
       ✅ Correct! XP +${missions[currentMissionIndex].xp}<br>
@@ -218,7 +200,6 @@ function checkAnswer() {
       document.getElementById("start-mission-btn").disabled = false;
     }, 1500);
   } else {
-    playIncorrectSound(); // Play random incorrect sound
     document.getElementById("feedback").className = "feedback-error";
     document.getElementById("feedback").innerText = "❌ Incorrect. Try again!";
   }
@@ -237,17 +218,29 @@ function getRandomCelebration() {
   return celebrations[Math.floor(Math.random() * celebrations.length)];
 }
 
-// Show achievement toast
-function showAchievementToast(message) {
-  const toast = document.createElement("div");
-  toast.className = "toast";
-  toast.innerText = message;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.classList.add("show"), 100);
-  setTimeout(() => {
-    toast.classList.remove("show");
-    setTimeout(() => document.body.removeChild(toast), 300);
-  }, 3000);
+// Query execution
+document.getElementById("query-input").addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    const userQuery = this.value.trim();
+    try {
+      const result = db.exec(userQuery);
+      displayResult(result);
+    } catch (error) {
+      displayResult([{ columns: ["Error"], values: [[error.message]] }]);
+    }
+  }
+});
+
+function displayResult(result) {
+  const output = document.getElementById("feedback");
+  output.className = "";
+  output.innerHTML = "";
+  if (!result || !result.length) {
+    output.innerText = "No results found.";
+    return;
+  }
+  output.innerHTML = "<table>" + generateTableHTML(result) + "</table>";
 }
 
 // Game flow control
@@ -263,5 +256,5 @@ document.getElementById("start-game-btn").addEventListener("click", startGame);
 
 // Initialize application
 document.addEventListener("DOMContentLoaded", () => {
-  loadData();
+  initDB();
 });
