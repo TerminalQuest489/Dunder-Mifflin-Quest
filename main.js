@@ -3,7 +3,25 @@ let currentMissionIndex = parseInt(localStorage.getItem('currentMission')) || 0;
 let timeLeft = 0;
 let missionInterval;
 
-// Rewards system
+// Helper functions first
+function updateProgressBar() {
+  const percent = ((rewards.xp % 100) / 100) * 100;
+  document.getElementById("xp-progress-bar").style.width = `${percent}%`;
+}
+
+function getRandomCelebration() {
+  const celebrations = [
+    "That's what she said!",
+    "Bears. Beets. Battlestar Galactica!",
+    "Identity theft is not a joke, Jim!",
+    "You're winner!",
+    "Assistant to the Regional Manager!",
+    "That's a Stanley nickel!"
+  ];
+  return celebrations[Math.floor(Math.random() * celebrations.length)];
+}
+
+// Initialize rewards system
 const rewards = new class {
   constructor() {
     this.xp = parseInt(localStorage.getItem('xp')) || 0;
@@ -11,6 +29,7 @@ const rewards = new class {
     this.achievements = JSON.parse(localStorage.getItem('achievements')) || [];
     this.updateUI();
   }
+
   addXP(amount) {
     this.xp += amount;
     this.level = Math.floor(this.xp / 100) + 1;
@@ -18,6 +37,7 @@ const rewards = new class {
     this.unlockAchievement(missions[currentMissionIndex].achievement);
     this.updateUI();
   }
+
   unlockAchievement(name) {
     if (!this.achievements.includes(name)) {
       this.achievements.push(name);
@@ -25,6 +45,7 @@ const rewards = new class {
       alert(`🏆 Achievement Unlocked: ${name}`);
     }
   }
+
   updateUI() {
     document.getElementById("xp").innerText = this.xp;
     document.getElementById("level").innerText = this.level;
@@ -32,11 +53,6 @@ const rewards = new class {
     updateProgressBar();
   }
 };
-
-function updateProgressBar() {
-  const percent = ((rewards.xp % 100) / 100) * 100;
-  document.getElementById("xp-progress-bar").style.width = `${percent}%`;
-}
 
 // Game missions
 const missions = [
@@ -55,26 +71,20 @@ async function initDB() {
     });
     db = new SQL.Database();
 
-    // Load external data
-    const [salesResponse, quoteResponse] = await Promise.all([
-      fetch("data/dunder_mifflin_sales.json"),
-      fetch("data/michael_quotes.json")
-    ]);
-    const salesData = await salesResponse.json();
-    const quotesData = await quoteResponse.json();
-
     // Create tables
     db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
-    salesData.sales.forEach(row => {
-      db.run(`INSERT INTO sales VALUES (?, ?, ?, ?)`, 
-        [row.employee, row.product, row.amount, row.client]);
-    });
+    db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 500, 'AAA Paper')");
+    db.run("INSERT INTO sales VALUES ('Jim', 'Printer', 300, 'Dunder Corp')");
+    db.run("INSERT INTO sales VALUES ('Dwight', 'Stapler', 45, 'Staples Inc')");
+    db.run("INSERT INTO sales VALUES ('Pam', 'Notebooks', 120, 'Office Dreams')");
+    db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 750, 'Paper World')");
 
     db.run("CREATE TABLE quotes (character TEXT, quote TEXT, season INTEGER)");
-    quotesData.quotes.forEach(row => {
-      db.run(`INSERT INTO quotes VALUES (?, ?, ?)`, 
-        [row.character, row.quote, row.season]);
-    });
+    db.run("INSERT INTO quotes VALUES ('Michael', 'That''s what she said!', 2)");
+    db.run("INSERT INTO quotes VALUES ('Dwight', 'Bears. Beets. Battlestar Galactica.', 3)");
+    db.run("INSERT INTO quotes VALUES ('Michael', 'I''m not superstitious, but I am a little stitious.', 4)");
+    db.run("INSERT INTO quotes VALUES ('Jim', 'Bears do not... What is going on?! What are you doing?!', 3)");
+    db.run("INSERT INTO quotes VALUES ('Michael', 'Would I rather be feared or loved? Easy. Both.', 2)");
 
     updateTable('sales', 50);
     updateTable('quotes', 50);
@@ -203,19 +213,6 @@ function checkAnswer() {
     document.getElementById("feedback").className = "feedback-error";
     document.getElementById("feedback").innerText = "❌ Incorrect. Try again!";
   }
-}
-
-// Fun elements
-function getRandomCelebration() {
-  const celebrations = [
-    "That's what she said!",
-    "Bears. Beets. Battlestar Galactica!",
-    "Identity theft is not a joke, Jim!",
-    "You're winner!",
-    "Assistant to the Regional Manager!",
-    "That's a Stanley nickel!"
-  ];
-  return celebrations[Math.floor(Math.random() * celebrations.length)];
 }
 
 // Query execution
