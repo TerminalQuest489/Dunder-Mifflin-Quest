@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="office-theme">
 <head>
   <meta charset="UTF-8" />
   <title>📜 SQL Quest: The Office Edition</title>
@@ -12,6 +12,13 @@
       <p>You're on a quest to become the <strong>World's Best Paper Salesman</strong>.</p>
       <p>Your opponent: <strong>Dwight Schrute</strong> — the #1 seller at Dunder Mifflin.</p>
       <p>Solve SQL challenges to prove your skills. The harder the query, the more XP you earn!</p>
+      
+      <div id="data-preview">
+        <h2>📋 Data Preview</h2>
+        <button onclick="showDataPreview()">👀 Show Sample Data</button>
+        <div id="preview-tables" class="hidden"></div>
+      </div>
+
       <button id="start-game-btn">🚀 Start Your Sales Career</button>
     </div>
 
@@ -25,11 +32,14 @@
       </div>
 
       <div id="data-tables">
-        <h2>📊 Dunder Mifflin Sales Data</h2>
-        <table id="sales-table"></table>
-
-        <h2>📜 Michael’s Best Quotes</h2>
-        <table id="quotes-table"></table>
+        <div class="table-container">
+          <h2>📊 Dunder Mifflin Sales Data</h2>
+          <table id="sales-table"></table>
+        </div>
+        <div class="table-container">
+          <h2>📜 Michael’s Best Quotes</h2>
+          <table id="quotes-table"></table>
+        </div>
       </div>
 
       <div id="mission-area">
@@ -38,17 +48,17 @@
         <div id="timer" class="hidden">⏰ Time left: <span id="time-left">0</span>s</div>
 
         <h3>🔍 Run Your SQL Query Below</h3>
-        <textarea id="query-input" placeholder="Run any SQL query to find the answer..."></textarea>
+        <textarea id="query-input" placeholder="SELECT * FROM sales WHERE employee = 'Dwight';"></textarea>
 
         <h3>📝 Enter Your Final Answer</h3>
         <input type="text" id="final-answer" placeholder="Type your answer here..." />
         <button id="submit-answer" disabled>✅ Submit Answer</button>
-        <p id="feedback"></p>
+        <div id="feedback"></div>
       </div>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/sql.js @0.8.0/dist/sql-wasm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sql.js@0.8.0/dist/sql-wasm.min.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
