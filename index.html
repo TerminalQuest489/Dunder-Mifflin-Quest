@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" class="office-theme">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>📜 SQL Quest: The Office Edition</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="game-container">
@@ -15,11 +15,11 @@
       
       <div id="data-preview">
         <h2>📋 Data Preview</h2>
-        <button onclick="showDataPreview()">👀 Show Sample Data</button>
+        <button id="preview-data-btn" disabled>👀 Loading Data...</button>
         <div id="preview-tables" class="hidden"></div>
       </div>
 
-      <button id="start-game-btn">🚀 Start Your Sales Career</button>
+      <button id="start-game-btn" disabled>🚀 Starting Game...</button>
     </div>
 
     <div id="game-ui" style="display: none;">
@@ -51,7 +51,7 @@
         <textarea id="query-input" placeholder="SELECT * FROM sales WHERE employee = 'Dwight';"></textarea>
 
         <h3>📝 Enter Your Final Answer</h3>
-        <input type="text" id="final-answer" placeholder="Type your answer here..." />
+        <input type="text" id="final-answer" placeholder="Type your answer here...">
         <button id="submit-answer" disabled>✅ Submit Answer</button>
         <div id="feedback"></div>
       </div>
