@@ -3,10 +3,9 @@ let currentMissionIndex = parseInt(localStorage.getItem('currentMission')) || 0;
 let timeLeft = 0;
 let missionInterval;
 
-// --- STEP 1: Define helper functions ---
+// --- STEP 1: Define helper functions FIRST ---
 
 function updateProgressBar() {
-  // Safely access rewards now because we've ensured it's initialized
   const percent = ((rewards.xp % 100) / 100) * 100;
   document.getElementById("xp-progress-bar").style.width = `${percent}%`;
 }
@@ -34,12 +33,12 @@ const missions = [
 ];
 
 // --- STEP 3: Initialize rewards system ---
-
 const rewards = new class {
   constructor() {
     this.xp = parseInt(localStorage.getItem('xp')) || 0;
     this.level = Math.floor(this.xp / 100) + 1;
     this.achievements = JSON.parse(localStorage.getItem('achievements')) || [];
+    this.updateUI();
   }
 
   addXP(amount) {
@@ -62,17 +61,11 @@ const rewards = new class {
     document.getElementById("xp").innerText = this.xp;
     document.getElementById("level").innerText = this.level;
     document.getElementById("achievements").innerText = this.achievements.join(", ") || "None";
-    updateProgressBar(); // This is OK now
+    updateProgressBar(); // Safe now because everything is defined
   }
 };
 
-// Run updateUI() AFTER rewards is defined
-window.addEventListener("DOMContentLoaded", () => {
-  rewards.updateUI();
-});
-
 // --- STEP 4: Database initialization ---
-
 async function initDB() {
   try {
     const SQL = await initSqlJs({
@@ -80,7 +73,7 @@ async function initDB() {
     });
     db = new SQL.Database();
 
-    // Create tables and insert data
+    // Create tables
     db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
     db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 500, 'AAA Paper')");
     db.run("INSERT INTO sales VALUES ('Jim', 'Printer', 300, 'Dunder Corp')");
