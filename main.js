@@ -3,9 +3,10 @@ let currentMissionIndex = parseInt(localStorage.getItem('currentMission')) || 0;
 let timeLeft = 0;
 let missionInterval;
 
-// --- STEP 1: Define all helper functions FIRST ---
+// --- STEP 1: Define helper functions ---
 
 function updateProgressBar() {
+  // Safely access rewards now because we've ensured it's initialized
   const percent = ((rewards.xp % 100) / 100) * 100;
   document.getElementById("xp-progress-bar").style.width = `${percent}%`;
 }
@@ -22,14 +23,23 @@ function getRandomCelebration() {
   return celebrations[Math.floor(Math.random() * celebrations.length)];
 }
 
-// --- STEP 2: Define rewards system AFTER helper functions ---
+// --- STEP 2: Define missions ---
+
+const missions = [
+  { question: "How many sales did Dwight make?", answer: "134", xp: 50, achievement: "Sales Counting Rookie", timeLimit: 60 },
+  { question: "What's the total sales amount made by Jim?", answer: "42675", xp: 100, achievement: "Sales Totals Master", timeLimit: 50 },
+  { question: "How many clients bought more than one product?", answer: "27", xp: 150, achievement: "Client Analyst", timeLimit: 40 },
+  { question: "What's the most sold product by total sales?", answer: "Paper", xp: 200, achievement: "Product Expert", timeLimit: 30 },
+  { question: "Who has the highest average sale amount?", answer: "Dwight Schrute", xp: 250, achievement: "Sales Champion", timeLimit: 25 }
+];
+
+// --- STEP 3: Initialize rewards system ---
 
 const rewards = new class {
   constructor() {
     this.xp = parseInt(localStorage.getItem('xp')) || 0;
     this.level = Math.floor(this.xp / 100) + 1;
     this.achievements = JSON.parse(localStorage.getItem('achievements')) || [];
-    this.updateUI();
   }
 
   addXP(amount) {
@@ -56,15 +66,10 @@ const rewards = new class {
   }
 };
 
-// --- STEP 3: Define missions ---
-
-const missions = [
-  { question: "How many sales did Dwight make?", answer: "134", xp: 50, achievement: "Sales Counting Rookie", timeLimit: 60 },
-  { question: "What's the total sales amount made by Jim?", answer: "42675", xp: 100, achievement: "Sales Totals Master", timeLimit: 50 },
-  { question: "How many clients bought more than one product?", answer: "27", xp: 150, achievement: "Client Analyst", timeLimit: 40 },
-  { question: "What's the most sold product by total sales?", answer: "Paper", xp: 200, achievement: "Product Expert", timeLimit: 30 },
-  { question: "Who has the highest average sale amount?", answer: "Dwight Schrute", xp: 250, achievement: "Sales Champion", timeLimit: 25 }
-];
+// Run updateUI() AFTER rewards is defined
+window.addEventListener("DOMContentLoaded", () => {
+  rewards.updateUI();
+});
 
 // --- STEP 4: Database initialization ---
 
@@ -75,7 +80,7 @@ async function initDB() {
     });
     db = new SQL.Database();
 
-    // Create tables and insert data...
+    // Create tables and insert data
     db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
     db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 500, 'AAA Paper')");
     db.run("INSERT INTO sales VALUES ('Jim', 'Printer', 300, 'Dunder Corp')");
@@ -199,7 +204,7 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
   }, 1000);
 });
 
-// --- STEP 9: Play sound effect (optional) ---
+// --- STEP 9: Play correct sound (optional) ---
 
 function showCorrectAnswer() {
   const audio = new Audio('assets/sounds/correct.mp3');
