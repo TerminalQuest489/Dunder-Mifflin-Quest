@@ -77,7 +77,7 @@ button {
   font-size: 16px;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   background: #2980b9;
   transform: scale(1.05);
 }
@@ -125,12 +125,16 @@ button:hover {
   display: none;
 }
 
-#preview-tables table {
-  max-height: 300px;
-  overflow: auto;
-  display: block;
+#preview-tables {
+  max-height: 400px;
+  overflow-y: auto;
+  margin: 20px 0;
+  border: 2px dashed #3498db;
+  padding: 15px;
+  border-radius: 8px;
 }
 
-#data-preview {
-  margin: 25px 0;
+button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
 }
