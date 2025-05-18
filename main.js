@@ -23,15 +23,21 @@ const rewards = new class {
     if (!this.achievements.includes(name)) {
       this.achievements.push(name);
       localStorage.setItem('achievements', JSON.stringify(this.achievements));
-      alert(`🏆 Achievement Unlocked: ${name}`);
+      showAchievementToast(`🏆 Achievement Unlocked: ${name}`);
     }
   }
   updateUI() {
     document.getElementById("xp").innerText = this.xp;
     document.getElementById("level").innerText = this.level;
     document.getElementById("achievements").innerText = this.achievements.join(", ") || "None";
+    updateProgressBar();
   }
 };
+
+function updateProgressBar() {
+  const percent = ((rewards.xp % 100) / 100) * 100;
+  document.getElementById("xp-progress-bar").style.width = `${percent}%`;
+}
 
 // Game missions
 const missions = [
@@ -171,43 +177,23 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
 });
 
 // Play random correct sound
-async function playCorrectSound() {
-  const dir = 'assets/sounds/correct/';
-  try {
-    const res = await fetch(dir);
-    const text = await res.text();
-    const parser = new DOMParser();
-    const html = parser.parseFromString(text, "text/html");
-    const links = Array.from(html.querySelectorAll("a")).map(a => a.textContent.trim());
-    const validSounds = links.filter(file => file.endsWith(".mp3") && file !== "creed.mp3");
-
-    if (validSounds.length > 0) {
-      const randomSound = validSounds[Math.floor(Math.random() * validSounds.length)];
-      new Audio(`${dir}${randomSound}`).play();
-    }
-  } catch (e) {
-    console.warn("Could not load correct sounds");
-  }
+function playCorrectSound() {
+  const correctSounds = [
+    'assets/sounds/correct/correct1.mp3',
+    'assets/sounds/correct/correct2.mp3'
+  ];
+  const randomSound = correctSounds[Math.floor(Math.random() * correctSounds.length)];
+  new Audio(randomSound).play();
 }
 
 // Play random incorrect sound
-async function playIncorrectSound() {
-  const dir = 'assets/sounds/incorrect/';
-  try {
-    const res = await fetch(dir);
-    const text = await res.text();
-    const parser = new DOMParser();
-    const html = parser.parseFromString(text, "text/html");
-    const links = Array.from(html.querySelectorAll("a")).map(a => a.textContent.trim());
-    const validSounds = links.filter(file => file.endsWith(".mp3") && file !== "wrong_answer.mp3");
-
-    if (validSounds.length > 0) {
-      const randomSound = validSounds[Math.floor(Math.random() * validSounds.length)];
-      new Audio(`${dir}${randomSound}`).play();
-    }
-  } catch (e) {
-    console.warn("Could not load incorrect sounds");
-  }
+function playIncorrectSound() {
+  const incorrectSounds = [
+    'assets/sounds/incorrect/wrong1.mp3',
+    'assets/sounds/incorrect/wrong2.mp3'
+  ];
+  const randomSound = incorrectSounds[Math.floor(Math.random() * incorrectSounds.length)];
+  new Audio(randomSound).play();
 }
 
 // Answer checking
@@ -249,6 +235,19 @@ function getRandomCelebration() {
     "That's a Stanley nickel!"
   ];
   return celebrations[Math.floor(Math.random() * celebrations.length)];
+}
+
+// Show achievement toast
+function showAchievementToast(message) {
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.innerText = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.classList.add("show"), 100);
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => document.body.removeChild(toast), 300);
+  }, 3000);
 }
 
 // Game flow control
