@@ -66,26 +66,35 @@ const missions = [
 // Database initialization
 async function initDB() {
   try {
+    // Load sql.js
     const SQL = await initSqlJs({
       locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/${file}`
     });
+
     db = new SQL.Database();
+
+    // Fetch and load real data
+    const [salesRes, quotesRes] = await Promise.all([
+      fetch("data/dunder_mifflin_sales.json"),
+      fetch("data/michael_quotes.json")
+    ]);
+    const salesData = await salesRes.json();
+    const quotesData = await quotesRes.json();
 
     // Create tables
     db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
-    db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 500, 'AAA Paper')");
-    db.run("INSERT INTO sales VALUES ('Jim', 'Printer', 300, 'Dunder Corp')");
-    db.run("INSERT INTO sales VALUES ('Dwight', 'Stapler', 45, 'Staples Inc')");
-    db.run("INSERT INTO sales VALUES ('Pam', 'Notebooks', 120, 'Office Dreams')");
-    db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 750, 'Paper World')");
+    salesData.sales.forEach(row => {
+      db.run("INSERT INTO sales VALUES (?, ?, ?, ?)", 
+        [row.employee, row.product, row.amount, row.client]);
+    });
 
     db.run("CREATE TABLE quotes (character TEXT, quote TEXT, season INTEGER)");
-    db.run("INSERT INTO quotes VALUES ('Michael', 'That''s what she said!', 2)");
-    db.run("INSERT INTO quotes VALUES ('Dwight', 'Bears. Beets. Battlestar Galactica.', 3)");
-    db.run("INSERT INTO quotes VALUES ('Michael', 'I''m not superstitious, but I am a little stitious.', 4)");
-    db.run("INSERT INTO quotes VALUES ('Jim', 'Bears do not... What is going on?! What are you doing?!", 3)");
-    db.run("INSERT INTO quotes VALUES ('Michael', 'Would I rather be feared or loved? Easy. Both.', 2)");
+    quotesData.quotes.forEach(row => {
+      db.run("INSERT INTO quotes VALUES (?, ?, ?)", 
+        [row.character, row.quote, row.season]);
+    });
 
+    // Show sample data
     updateTable('sales', 50);
     updateTable('quotes', 50);
 
@@ -142,6 +151,7 @@ function showDataPreview() {
     html += generateTableHTML(quotesPreview);
 
     previewDiv.innerHTML = html;
+
   } catch (error) {
     alert("⚠️ Please wait while we load the data...");
   }
@@ -190,7 +200,7 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
   }, 1000);
 });
 
-// Play sound effect (optional)
+// Play correct sound (optional)
 function showCorrectAnswer() {
   const audio = new Audio('assets/sounds/correct.mp3');
   try {
