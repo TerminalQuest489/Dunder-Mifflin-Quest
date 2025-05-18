@@ -67,7 +67,7 @@ const missions = [
 async function initDB() {
   try {
     const SQL = await initSqlJs({
-      locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@0.8.0/dist/${file}`
+      locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/${file}`
     });
     db = new SQL.Database();
 
