@@ -3,7 +3,8 @@ let currentMissionIndex = parseInt(localStorage.getItem('currentMission')) || 0;
 let timeLeft = 0;
 let missionInterval;
 
-// Helper functions first
+// --- STEP 1: Define all helper functions FIRST ---
+
 function updateProgressBar() {
   const percent = ((rewards.xp % 100) / 100) * 100;
   document.getElementById("xp-progress-bar").style.width = `${percent}%`;
@@ -21,7 +22,8 @@ function getRandomCelebration() {
   return celebrations[Math.floor(Math.random() * celebrations.length)];
 }
 
-// Initialize rewards system
+// --- STEP 2: Define rewards system AFTER helper functions ---
+
 const rewards = new class {
   constructor() {
     this.xp = parseInt(localStorage.getItem('xp')) || 0;
@@ -50,11 +52,12 @@ const rewards = new class {
     document.getElementById("xp").innerText = this.xp;
     document.getElementById("level").innerText = this.level;
     document.getElementById("achievements").innerText = this.achievements.join(", ") || "None";
-    updateProgressBar();
+    updateProgressBar(); // This is OK now
   }
 };
 
-// Game missions
+// --- STEP 3: Define missions ---
+
 const missions = [
   { question: "How many sales did Dwight make?", answer: "134", xp: 50, achievement: "Sales Counting Rookie", timeLimit: 60 },
   { question: "What's the total sales amount made by Jim?", answer: "42675", xp: 100, achievement: "Sales Totals Master", timeLimit: 50 },
@@ -63,36 +66,30 @@ const missions = [
   { question: "Who has the highest average sale amount?", answer: "Dwight Schrute", xp: 250, achievement: "Sales Champion", timeLimit: 25 }
 ];
 
-// Database initialization
+// --- STEP 4: Database initialization ---
+
 async function initDB() {
   try {
     const SQL = await initSqlJs({
-      locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/${file}`
+      locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js @1.7.0/dist/${file}`
     });
     db = new SQL.Database();
 
-    // Load external data
-    const [salesRes, quotesRes] = await Promise.all([
-      fetch("data/dunder_mifflin_sales.json"),
-      fetch("data/michael_quotes.json")
-    ]);
-    const salesData = await salesRes.json();
-    const quotesData = await quotesRes.json();
-
-    // Create tables
+    // Create tables and insert data...
     db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
-    salesData.sales.forEach(row => {
-      db.run("INSERT INTO sales VALUES (?, ?, ?, ?)", 
-        [row.employee, row.product, row.amount, row.client]);
-    });
+    db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 500, 'AAA Paper')");
+    db.run("INSERT INTO sales VALUES ('Jim', 'Printer', 300, 'Dunder Corp')");
+    db.run("INSERT INTO sales VALUES ('Dwight', 'Stapler', 45, 'Staples Inc')");
+    db.run("INSERT INTO sales VALUES ('Pam', 'Notebooks', 120, 'Office Dreams')");
+    db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 750, 'Paper World')");
 
     db.run("CREATE TABLE quotes (character TEXT, quote TEXT, season INTEGER)");
-    quotesData.quotes.forEach(row => {
-      db.run("INSERT INTO quotes VALUES (?, ?, ?)", 
-        [row.character, row.quote, row.season]);
-    });
+    db.run("INSERT INTO quotes VALUES ('Michael', 'That''s what she said!', 2)");
+    db.run("INSERT INTO quotes VALUES ('Dwight', 'Bears. Beets. Battlestar Galactica.', 3)");
+    db.run("INSERT INTO quotes VALUES ('Michael', 'I''m not superstitious, but I am a little stitious.', 4)");
+    db.run("INSERT INTO quotes VALUES ('Jim', 'Bears do not... What is going on?! What are you doing?!", 3)");
+    db.run("INSERT INTO quotes VALUES ('Michael', 'Would I rather be feared or loved? Easy. Both.', 2)");
 
-    // Update UI
     updateTable('sales', 50);
     updateTable('quotes', 50);
 
@@ -109,7 +106,8 @@ async function initDB() {
   }
 }
 
-// Table management
+// --- STEP 5: Table management ---
+
 function updateTable(tableName, limit = 50) {
   try {
     const result = db.exec(`SELECT * FROM ${tableName} LIMIT ${limit}`);
@@ -134,7 +132,8 @@ function generateTableHTML(result) {
   `;
 }
 
-// Data preview functionality
+// --- STEP 6: Data preview functionality ---
+
 function showDataPreview() {
   try {
     const previewDiv = document.getElementById('preview-tables');
@@ -155,7 +154,8 @@ function showDataPreview() {
   }
 }
 
-// Mission management
+// --- STEP 7: Mission management ---
+
 function loadMission(index) {
   if (index >= missions.length) {
     document.getElementById("mission-question").innerText = "🎉 You've completed all missions!";
@@ -177,7 +177,8 @@ function loadMission(index) {
   clearInterval(missionInterval);
 }
 
-// Timer functionality
+// --- STEP 8: Timer functionality ---
+
 document.getElementById("start-mission-btn").addEventListener("click", () => {
   clearInterval(missionInterval);
   const mission = missions[currentMissionIndex];
@@ -198,7 +199,8 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
   }, 1000);
 });
 
-// Play correct sound (optional)
+// --- STEP 9: Play sound effect (optional) ---
+
 function showCorrectAnswer() {
   const audio = new Audio('assets/sounds/correct.mp3');
   try {
@@ -206,7 +208,8 @@ function showCorrectAnswer() {
   } catch {}
 }
 
-// Answer checking
+// --- STEP 10: Answer checking ---
+
 document.getElementById("submit-answer").addEventListener("click", checkAnswer);
 
 function checkAnswer() {
@@ -232,7 +235,8 @@ function checkAnswer() {
   }
 }
 
-// Query execution
+// --- STEP 11: Query execution ---
+
 document.getElementById("query-input").addEventListener("keydown", function(e) {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -257,18 +261,21 @@ function displayResult(result) {
   output.innerHTML = "<table>" + generateTableHTML(result) + "</table>";
 }
 
-// Game flow control
+// --- STEP 12: Game flow control ---
+
 function startGame() {
   document.getElementById("intro-screen").style.display = "none";
   document.getElementById("game-ui").style.display = "block";
   loadMission(currentMissionIndex);
 }
 
-// Event listeners
+// --- STEP 13: Event listeners ---
+
 document.getElementById("preview-data-btn").addEventListener("click", showDataPreview);
 document.getElementById("start-game-btn").addEventListener("click", startGame);
 
-// Initialize application
+// --- STEP 14: Initialize application ---
+
 document.addEventListener("DOMContentLoaded", () => {
   initDB();
 });
