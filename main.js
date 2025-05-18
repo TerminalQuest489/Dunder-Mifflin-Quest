@@ -114,4 +114,194 @@ async function initDB() {
     db.run("CREATE TABLE quotes (character TEXT, quote TEXT, season INTEGER)");
     quotesData.quotes.forEach(row => {
       db.run(`INSERT INTO quotes VALUES (?, ?, ?)`, 
-        [row
+        [row.character, row.quote, row.season]);
+    });
+
+    updateTable('sales', 50);
+    updateTable('quotes', 50);
+    
+    // Enable buttons
+    document.getElementById("preview-data-btn").disabled = false;
+    document.getElementById("preview-data-btn").textContent = "👀 Show Sample Data";
+    document.getElementById("start-game-btn").disabled = false;
+    document.getElementById("start-game-btn").textContent = "🚀 Start Your Sales Career";
+
+  } catch (error) {
+    console.error("Database initialization failed:", error);
+    alert("Failed to initialize database. Please refresh the page.");
+  }
+}
+
+// Table management
+function updateTable(tableName, limit = 50) {
+  try {
+    const result = db.exec(`SELECT * FROM ${tableName} LIMIT ${limit}`);
+    const tableElement = document.getElementById(`${tableName}-table`);
+    tableElement.innerHTML = generateTableHTML(result);
+  } catch (error) {
+    console.error('Error updating table:', error);
+  }
+}
+
+function generateTableHTML(result) {
+  if (!result || !result.length) return "";
+  
+  return `
+    <thead><tr>${
+      result[0].columns.map(col => `<th>${col}</th>`).join("")
+    }</tr></thead>
+    <tbody>${
+      result[0].values.map(row => `
+        <tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>
+      `).join("")
+    }</tbody>
+  `;
+}
+
+// Data preview functionality
+function showDataPreview() {
+  try {
+    const previewDiv = document.getElementById('preview-tables');
+    previewDiv.classList.remove('hidden');
+    
+    const salesPreview = db.exec("SELECT employee, COUNT(*) as sales FROM sales GROUP BY employee");
+    let html = "<h3>📊 Employee Sales Count</h3>";
+    html += generateTableHTML(salesPreview);
+    
+    const quotesPreview = db.exec("SELECT character, COUNT(*) as quotes FROM quotes GROUP BY character");
+    html += "<h3>📜 Character Quote Count</h3>";
+    html += generateTableHTML(quotesPreview);
+    
+    previewDiv.innerHTML = html;
+  } catch (error) {
+    alert("⚠️ Please wait while we load the data...");
+  }
+}
+
+// Mission management
+function loadMission(index) {
+  if (index >= missions.length) {
+    document.getElementById("mission-question").innerText = "🎉 You've completed all missions!";
+    document.getElementById("submit-answer").disabled = true;
+    return;
+  }
+
+  currentMissionIndex = index;
+  localStorage.setItem('currentMission', currentMissionIndex);
+  document.getElementById("current-level").innerText = index + 1;
+  document.getElementById("mission-question").innerText = missions[index].question;
+  document.getElementById("final-answer").value = "";
+  document.getElementById("query-input").value = "";
+  document.getElementById("query-input").disabled = false;
+  document.getElementById("submit-answer").disabled = false;
+  document.getElementById("feedback").className = "";
+  document.getElementById("feedback").innerHTML = "";
+  document.getElementById("timer").classList.add("hidden");
+  clearInterval(missionInterval);
+}
+
+// Timer functionality
+document.getElementById("start-mission-btn").addEventListener("click", () => {
+  clearInterval(missionInterval);
+  const mission = missions[currentMissionIndex];
+  timeLeft = mission.timeLimit;
+  document.getElementById("time-left").textContent = timeLeft;
+  document.getElementById("timer").classList.remove("hidden");
+  document.getElementById("start-mission-btn").disabled = true;
+  document.getElementById("submit-answer").disabled = false;
+
+  missionInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById("time-left").textContent = timeLeft;
+
+    if (timeLeft <= 0) {
+      clearInterval(missionInterval);
+      document.getElementById("submit-answer").disabled = true;
+      document.getElementById("start-mission-btn").disabled = false;
+      showCorrectAnswer();
+    }
+  }, 1000);
+});
+
+// Answer checking
+document.getElementById("submit-answer").addEventListener("click", checkAnswer);
+
+function checkAnswer() {
+  const userAnswer = document.getElementById("final-answer").value.trim().toLowerCase();
+  const correctAnswer = missions[currentMissionIndex].answer.toLowerCase();
+
+  if (userAnswer === correctAnswer) {
+    document.getElementById("feedback").className = "feedback-correct";
+    document.getElementById("feedback").innerHTML = `
+      ✅ Correct! XP +${missions[currentMissionIndex].xp}<br>
+      🎉 ${getRandomCelebration()}
+    `;
+    rewards.addXP(missions[currentMissionIndex].xp);
+
+    setTimeout(() => {
+      currentMissionIndex++;
+      localStorage.setItem('currentMission', currentMissionIndex);
+      loadMission(currentMissionIndex);
+      document.getElementById("start-mission-btn").disabled = false;
+    }, 1500);
+  } else {
+    document.getElementById("feedback").className = "feedback-error";
+    document.getElementById("feedback").innerText = "❌ Incorrect. Try again!";
+  }
+}
+
+// Fun elements
+function getRandomCelebration() {
+  const celebrations = [
+    "That's what she said!",
+    "Bears. Beets. Battlestar Galactica!",
+    "Identity theft is not a joke, Jim!",
+    "You're winner!",
+    "Assistant to the Regional Manager!",
+    "That's a Stanley nickel!"
+  ];
+  return celebrations[Math.floor(Math.random() * celebrations.length)];
+}
+
+// Query execution
+document.getElementById("query-input").addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    const userQuery = this.value.trim();
+    try {
+      const result = db.exec(userQuery);
+      displayResult(result);
+    } catch (error) {
+      displayResult([{ columns: ["Error"], values: [[error.message]] }]);
+    }
+  }
+});
+
+function displayResult(result) {
+  const output = document.getElementById("feedback");
+  output.className = "";
+  output.innerHTML = "";
+  
+  if (!result || !result.length) {
+    output.innerText = "No results found.";
+    return;
+  }
+
+  output.innerHTML = "<table>" + generateTableHTML(result) + "</table>";
+}
+
+// Game flow control
+function startGame() {
+  document.getElementById("intro-screen").style.display = "none";
+  document.getElementById("game-ui").style.display = "block";
+  loadMission(currentMissionIndex);
+}
+
+// Event listeners
+document.getElementById("preview-data-btn").addEventListener("click", showDataPreview);
+document.getElementById("start-game-btn").addEventListener("click", startGame);
+
+// Initialize application
+document.addEventListener("DOMContentLoaded", () => {
+  initDB();
+});
