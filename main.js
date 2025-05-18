@@ -42,7 +42,7 @@ const missions = [
     achievement: "Sales Counting Rookie"
   },
   {
-    question: "What's the total amount of sales made by Jim?",
+    question: "What's the total sales amount made by Jim?",
     answer: "42675",
     xp: 100,
     achievement: "Sales Totals Master"
@@ -67,6 +67,30 @@ const missions = [
   }
 ];
 
+async function initDB() {
+  const SQL = window.SQL;
+  db = new SQL.Database();
+
+  const salesResponse = await fetch('data/dunder_mifflin_sales.json');
+  const salesData = await salesResponse.json();
+  db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
+  salesData.sales.forEach(row => db.run(`INSERT INTO sales VALUES (?, ?, ?, ?)`, [row.employee, row.product, row.amount, row.client]);
+
+  const quotesResponse = await fetch('data/michael_quotes.json');
+  const quotesData = await quotesResponse.json();
+  db.run("CREATE TABLE quotes (character TEXT, quote TEXT, season INTEGER)");
+  quotesData.quotes.forEach(row => db.run(`INSERT INTO quotes VALUES (?, ?, ?)`, [row.character, row.quote, row.season]));
+
+  console.log("✅ Database initialized!");
+}
+
+document.getElementById("start-game-btn").addEventListener("click", () => {
+  document.getElementById("intro-screen").style.display = "none";
+  document.getElementById("game-ui").style.display = "block";
+  loadMission(0);
+  initDB();
+});
+
 function loadMission(index) {
   if (index >= missions.length) {
     document.getElementById("mission-question").innerText = "🎉 You've completed all missions!";
@@ -74,9 +98,9 @@ function loadMission(index) {
     return;
   }
 
+  document.getElementById("current-level").innerText = index + 1;
   document.getElementById("mission-question").innerText = missions[index].question;
   document.getElementById("final-answer").value = "";
-  document.getElementById("submit-answer").disabled = false;
   document.getElementById("query-input").disabled = false;
   document.getElementById("feedback").innerText = "";
 }
@@ -89,11 +113,11 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
   missionInterval = setInterval(() => {
     timeLeft--;
     document.getElementById("time-left").innerText = timeLeft;
+
     if (timeLeft <= 0) {
       clearInterval(missionInterval);
       document.getElementById("submit-answer").disabled = true;
-      document.getElementById("feedback").innerText = `⏰ Time's up! The correct answer was: ${mission.answer}`;
-      showLearningLinks();
+      showCorrectAnswer();
     }
   }, 1000);
 });
@@ -102,17 +126,78 @@ document.getElementById("submit-answer").addEventListener("click", () => {
   const userAnswer = document.getElementById("final-answer").value.trim();
   const correctAnswer = missions[currentMissionIndex].answer;
 
-  if (userAnswer === correctAnswer) {
-    document.getElementById("feedback").innerText = `✅ Correct! ${missions[currentMissionIndex].question} Answer: ${correctAnswer}`;
-    rewards.addXP(missions[currentMissionIndex].xp);
+  try {
+    if (userAnswer === correctAnswer) {
+      document.getElementById("feedback").innerText = `✅ Correct! XP +${missions[currentMissionIndex].xp}`;
+      rewards.addXP(missions[currentMissionIndex].xp);
 
-    setTimeout(() => {
-      document.getElementById("feedback").innerText = "";
-      currentMissionIndex++;
-      loadMission(currentMissionIndex);
-    }, 1000);
+      setTimeout(() => {
+        document.getElementById("feedback").innerText = "";
+        document.getElementById("final-answer").value = "";
+        document.getElementById("query-input").value = "";
+        document.getElementById("submit-answer").disabled = true;
+        document.getElementById("timer").classList.add("hidden");
+        clearInterval(missionInterval);
+        currentMissionIndex++;
+        loadMission(currentMissionIndex);
+      }, 1000);
 
-  } else {
-    document.getElementById("feedback").innerText = `❌ Incorrect. Try again or check your query.`;
+    } else {
+      document.getElementById("feedback").innerText = "❌ Incorrect. Try again.";
+    }
+  } catch (e) {
+    document.getElementById("feedback").innerText = "⚠️ Error validating answer.";
   }
 });
+
+document.getElementById("query-input").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    try {
+      const result = db.exec(this.value.trim());
+      displayResult(result);
+    } catch (error) {
+      displayResult([{ columns: ["Error"], values: [[error.message]] }]);
+    }
+    this.value = "";
+  }
+});
+
+function displayResult(result) {
+  const output = document.getElementById("feedback");
+  if (!result || !result.length) {
+    output.innerText = "No results found.";
+    return;
+  }
+
+  let html = "<table><thead><tr>";
+  html += result[0].columns.map(col => `<th>${col}</th>`).join("");
+  html += "</tr></thead><tbody>";
+
+  result[0].values.forEach(row => {
+    html += "<tr>" + row.map(cell => `<td>${cell}</td>`).join("") + "</tr>";
+  });
+
+  html += "</tbody></table>";
+  output.innerHTML = html;
+}
+
+function showCorrectAnswer() {
+  const correctAnswer = missions[currentMissionIndex].answer;
+  document.getElementById("feedback").innerHTML = `
+    ❌ Time ran out! The correct answer was: <strong>${correctAnswer}</strong>
+    <br><br>💡 Want to try again? Click "Start Mission"!
+  `;
+  showLearningLinks();
+}
+
+function showLearningLinks() {
+  document.getElementById("feedback").innerHTML += `
+    <br><br>
+    📚 Learn More:
+    <ul>
+      <li><a href="https://www.w3schools.com/sql/ " target="_blank">W3Schools SQL</a></li>
+      <li><a href="https://sqlbolt.com/ " target="_blank">SQLBolt Interactive Tutorial</a></li>
+      <li><a href="https://mode.com/sql-tutorial/ " target="_blank">Mode SQL Guide</a></li>
+    </ul>
+  `;
+}
