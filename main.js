@@ -37,50 +37,19 @@ const rewards = new class {
 
 // Game missions
 const missions = [
-  {
-    question: "How many sales did Dwight make?",
-    answer: "134",
-    xp: 50,
-    achievement: "Sales Counting Rookie",
-    timeLimit: 60
-  },
-  {
-    question: "What's the total sales amount made by Jim?",
-    answer: "42675",
-    xp: 100,
-    achievement: "Sales Totals Master",
-    timeLimit: 50
-  },
-  {
-    question: "How many clients bought more than one product?",
-    answer: "27",
-    xp: 150,
-    achievement: "Client Analyst",
-    timeLimit: 40
-  },
-  {
-    question: "What's the most sold product by total sales?",
-    answer: "Paper",
-    xp: 200,
-    achievement: "Product Expert",
-    timeLimit: 30
-  },
-  {
-    question: "Who has the highest average sale amount?",
-    answer: "Dwight Schrute",
-    xp: 250,
-    achievement: "Sales Champion",
-    timeLimit: 25
-  }
+  { question: "How many sales did Dwight make?", answer: "134", xp: 50, achievement: "Sales Counting Rookie", timeLimit: 60 },
+  { question: "What's the total sales amount made by Jim?", answer: "42675", xp: 100, achievement: "Sales Totals Master", timeLimit: 50 },
+  { question: "How many clients bought more than one product?", answer: "27", xp: 150, achievement: "Client Analyst", timeLimit: 40 },
+  { question: "What's the most sold product by total sales?", answer: "Paper", xp: 200, achievement: "Product Expert", timeLimit: 30 },
+  { question: "Who has the highest average sale amount?", answer: "Dwight Schrute", xp: 250, achievement: "Sales Champion", timeLimit: 25 }
 ];
 
 // Database initialization
 async function initDB() {
   try {
     const SQL = await initSqlJs({
-      locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@0.8.0/dist/${file}`
+      locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js @0.8.0/dist/${file}`
     });
-
     db = new SQL.Database();
 
     // Create sample data
@@ -93,7 +62,7 @@ async function initDB() {
         {employee: "Dwight", product: "Paper", amount: 750, client: "Paper World"}
       ]
     };
-    
+
     const quotesData = {
       quotes: [
         {character: "Michael", quote: "That's what she said!", season: 2},
@@ -119,13 +88,13 @@ async function initDB() {
 
     updateTable('sales', 50);
     updateTable('quotes', 50);
-    
+
     // Enable buttons
     document.getElementById("preview-data-btn").disabled = false;
     document.getElementById("preview-data-btn").textContent = "👀 Show Sample Data";
+
     document.getElementById("start-game-btn").disabled = false;
     document.getElementById("start-game-btn").textContent = "🚀 Start Your Sales Career";
-
   } catch (error) {
     console.error("Database initialization failed:", error);
     alert("Failed to initialize database. Please refresh the page.");
@@ -145,7 +114,6 @@ function updateTable(tableName, limit = 50) {
 
 function generateTableHTML(result) {
   if (!result || !result.length) return "";
-  
   return `
     <thead><tr>${
       result[0].columns.map(col => `<th>${col}</th>`).join("")
@@ -163,15 +131,15 @@ function showDataPreview() {
   try {
     const previewDiv = document.getElementById('preview-tables');
     previewDiv.classList.remove('hidden');
-    
+
     const salesPreview = db.exec("SELECT employee, COUNT(*) as sales FROM sales GROUP BY employee");
     let html = "<h3>📊 Employee Sales Count</h3>";
     html += generateTableHTML(salesPreview);
-    
+
     const quotesPreview = db.exec("SELECT character, COUNT(*) as quotes FROM quotes GROUP BY character");
     html += "<h3>📜 Character Quote Count</h3>";
     html += generateTableHTML(quotesPreview);
-    
+
     previewDiv.innerHTML = html;
   } catch (error) {
     alert("⚠️ Please wait while we load the data...");
@@ -185,7 +153,6 @@ function loadMission(index) {
     document.getElementById("submit-answer").disabled = true;
     return;
   }
-
   currentMissionIndex = index;
   localStorage.setItem('currentMission', currentMissionIndex);
   document.getElementById("current-level").innerText = index + 1;
@@ -213,7 +180,6 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
   missionInterval = setInterval(() => {
     timeLeft--;
     document.getElementById("time-left").textContent = timeLeft;
-
     if (timeLeft <= 0) {
       clearInterval(missionInterval);
       document.getElementById("submit-answer").disabled = true;
@@ -225,7 +191,6 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
 
 // Answer checking
 document.getElementById("submit-answer").addEventListener("click", checkAnswer);
-
 function checkAnswer() {
   const userAnswer = document.getElementById("final-answer").value.trim().toLowerCase();
   const correctAnswer = missions[currentMissionIndex].answer.toLowerCase();
@@ -281,12 +246,10 @@ function displayResult(result) {
   const output = document.getElementById("feedback");
   output.className = "";
   output.innerHTML = "";
-  
   if (!result || !result.length) {
     output.innerText = "No results found.";
     return;
   }
-
   output.innerHTML = "<table>" + generateTableHTML(result) + "</table>";
 }
 
