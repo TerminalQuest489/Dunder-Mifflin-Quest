@@ -83,7 +83,7 @@ async function initDB() {
     db.run("INSERT INTO quotes VALUES ('Michael', 'That''s what she said!', 2)");
     db.run("INSERT INTO quotes VALUES ('Dwight', 'Bears. Beets. Battlestar Galactica.', 3)");
     db.run("INSERT INTO quotes VALUES ('Michael', 'I''m not superstitious, but I am a little stitious.', 4)");
-    db.run("INSERT INTO quotes VALUES ('Jim', 'Bears do not... What is going on?! What are you doing?!', 3)");
+    db.run("INSERT INTO quotes VALUES ('Jim', 'Bears do not... What is going on?! What are you doing?!", 3)");
     db.run("INSERT INTO quotes VALUES ('Michael', 'Would I rather be feared or loved? Easy. Both.', 2)");
 
     updateTable('sales', 50);
@@ -185,9 +185,18 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
       clearInterval(missionInterval);
       document.getElementById("submit-answer").disabled = true;
       document.getElementById("start-mission-btn").disabled = false;
+      showCorrectAnswer();
     }
   }, 1000);
 });
+
+// Play sound effect (optional)
+function showCorrectAnswer() {
+  const audio = new Audio('assets/sounds/correct.mp3');
+  try {
+    audio.play();
+  } catch {}
+}
 
 // Answer checking
 document.getElementById("submit-answer").addEventListener("click", checkAnswer);
