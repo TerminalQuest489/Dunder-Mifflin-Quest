@@ -39,31 +39,36 @@ const missions = [
     question: "How many sales did Dwight make?",
     answer: "134",
     xp: 50,
-    achievement: "Sales Counting Rookie"
+    achievement: "Sales Counting Rookie",
+    timeLimit: 60
   },
   {
     question: "What's the total sales amount made by Jim?",
     answer: "42675",
     xp: 100,
-    achievement: "Sales Totals Master"
+    achievement: "Sales Totals Master",
+    timeLimit: 50
   },
   {
     question: "How many clients bought more than one product?",
     answer: "27",
     xp: 150,
-    achievement: "Client Analyst"
+    achievement: "Client Analyst",
+    timeLimit: 40
   },
   {
     question: "What's the most sold product by total sales?",
     answer: "Paper",
     xp: 200,
-    achievement: "Product Expert"
+    achievement: "Product Expert",
+    timeLimit: 30
   },
   {
     question: "Who has the highest average sale amount?",
     answer: "Dwight Schrute",
     xp: 250,
-    achievement: "Sales Champion"
+    achievement: "Sales Champion",
+    timeLimit: 25
   }
 ];
 
@@ -74,7 +79,7 @@ async function initDB() {
   const salesResponse = await fetch('data/dunder_mifflin_sales.json');
   const salesData = await salesResponse.json();
   db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
-  salesData.sales.forEach(row => db.run(`INSERT INTO sales VALUES (?, ?, ?, ?)`, [row.employee, row.product, row.amount, row.client]);
+  salesData.sales.forEach(row => db.run(`INSERT INTO sales VALUES (?, ?, ?, ?)`, [row.employee, row.product, row.amount, row.client]));
 
   const quotesResponse = await fetch('data/michael_quotes.json');
   const quotesData = await quotesResponse.json();
@@ -83,13 +88,6 @@ async function initDB() {
 
   console.log("✅ Database initialized!");
 }
-
-document.getElementById("start-game-btn").addEventListener("click", () => {
-  document.getElementById("intro-screen").style.display = "none";
-  document.getElementById("game-ui").style.display = "block";
-  loadMission(0);
-  initDB();
-});
 
 function loadMission(index) {
   if (index >= missions.length) {
@@ -102,12 +100,13 @@ function loadMission(index) {
   document.getElementById("mission-question").innerText = missions[index].question;
   document.getElementById("final-answer").value = "";
   document.getElementById("query-input").disabled = false;
+  document.getElementById("submit-answer").disabled = false;
   document.getElementById("feedback").innerText = "";
 }
 
 document.getElementById("start-mission-btn").addEventListener("click", () => {
   const mission = missions[currentMissionIndex];
-  timeLeft = mission.timeLimit || 60;
+  timeLeft = mission.timeLimit;
   document.getElementById("timer").classList.remove("hidden");
 
   missionInterval = setInterval(() => {
@@ -122,43 +121,39 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
   }, 1000);
 });
 
-document.getElementById("submit-answer").addEventListener("click", () => {
+function checkAnswer() {
   const userAnswer = document.getElementById("final-answer").value.trim();
   const correctAnswer = missions[currentMissionIndex].answer;
 
-  try {
-    if (userAnswer === correctAnswer) {
-      document.getElementById("feedback").innerText = `✅ Correct! XP +${missions[currentMissionIndex].xp}`;
-      rewards.addXP(missions[currentMissionIndex].xp);
+  if (userAnswer === correctAnswer) {
+    document.getElementById("feedback").innerText = `✅ Correct! XP +${missions[currentMissionIndex].xp}`;
+    rewards.addXP(missions[currentMissionIndex].xp);
 
-      setTimeout(() => {
-        document.getElementById("feedback").innerText = "";
-        document.getElementById("final-answer").value = "";
-        document.getElementById("query-input").value = "";
-        document.getElementById("submit-answer").disabled = true;
-        document.getElementById("timer").classList.add("hidden");
-        clearInterval(missionInterval);
-        currentMissionIndex++;
-        loadMission(currentMissionIndex);
-      }, 1000);
+    setTimeout(() => {
+      document.getElementById("feedback").innerText = "";
+      document.getElementById("final-answer").value = "";
+      document.getElementById("query-input").value = "";
+      document.getElementById("submit-answer").disabled = true;
+      document.getElementById("timer").classList.add("hidden");
+      clearInterval(missionInterval);
+      currentMissionIndex++;
+      loadMission(currentMissionIndex);
+    }, 1000);
 
-    } else {
-      document.getElementById("feedback").innerText = "❌ Incorrect. Try again.";
-    }
-  } catch (e) {
-    document.getElementById("feedback").innerText = "⚠️ Error validating answer.";
+  } else {
+    document.getElementById("feedback").innerText = "❌ Incorrect. Try again.";
   }
-});
+}
 
 document.getElementById("query-input").addEventListener("keydown", function(e) {
   if (e.key === "Enter") {
+    const userQuery = this.value.trim();
     try {
-      const result = db.exec(this.value.trim());
+      const result = db.exec(userQuery);
       displayResult(result);
     } catch (error) {
       displayResult([{ columns: ["Error"], values: [[error.message]] }]);
     }
-    this.value = "";
   }
 });
 
@@ -201,3 +196,13 @@ function showLearningLinks() {
     </ul>
   `;
 }
+
+document.getElementById("start-game-btn").addEventListener("click", () => {
+  document.getElementById("intro-screen").style.display = "none";
+  document.getElementById("game-ui").style.display = "block";
+  loadMission(0);
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  initDB();
+});
