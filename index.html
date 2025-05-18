@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" class="office-theme">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>📜 SQL Quest: The Office Edition</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="game-container">
@@ -12,7 +12,7 @@
       <p>You're on a quest to become the <strong>World's Best Paper Salesman</strong>.</p>
       <p>Your opponent: <strong>Dwight Schrute</strong> — the #1 seller at Dunder Mifflin.</p>
       <p>Solve SQL challenges to prove your skills. The harder the query, the more XP you earn!</p>
-      
+
       <div id="data-preview">
         <h2>📋 Data Preview</h2>
         <button id="preview-data-btn" disabled>👀 Loading Data...</button>
@@ -58,7 +58,9 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/sql.js@0.8.0/dist/sql-wasm.min.js"></script>
+  <!-- Load sql.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sql.js @0.8.0/dist/sql-wasm.js"></script>
+  <!-- Main JavaScript -->
   <script src="main.js"></script>
 </body>
 </html>
