@@ -3,7 +3,7 @@ let currentMissionIndex = parseInt(localStorage.getItem('currentMission')) || 0;
 let timeLeft = 0;
 let missionInterval;
 
-// Initialize rewards system
+// Rewards system
 const rewards = new class {
   constructor() {
     this.xp = parseInt(localStorage.getItem('xp')) || 0;
@@ -11,7 +11,6 @@ const rewards = new class {
     this.achievements = JSON.parse(localStorage.getItem('achievements')) || [];
     this.updateUI();
   }
-
   addXP(amount) {
     this.xp += amount;
     this.level = Math.floor(this.xp / 100) + 1;
@@ -19,7 +18,6 @@ const rewards = new class {
     this.unlockAchievement(missions[currentMissionIndex].achievement);
     this.updateUI();
   }
-
   unlockAchievement(name) {
     if (!this.achievements.includes(name)) {
       this.achievements.push(name);
@@ -27,7 +25,6 @@ const rewards = new class {
       alert(`🏆 Achievement Unlocked: ${name}`);
     }
   }
-
   updateUI() {
     document.getElementById("xp").innerText = this.xp;
     document.getElementById("level").innerText = this.level;
@@ -62,7 +59,6 @@ async function initDB() {
         {employee: "Dwight", product: "Paper", amount: 750, client: "Paper World"}
       ]
     };
-
     const quotesData = {
       quotes: [
         {character: "Michael", quote: "That's what she said!", season: 2},
@@ -76,13 +72,13 @@ async function initDB() {
     // Create tables
     db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
     salesData.sales.forEach(row => {
-      db.run(`INSERT INTO sales VALUES (?, ?, ?, ?)`, 
+      db.run(`INSERT INTO sales VALUES (?, ?, ?, ?)`,
         [row.employee, row.product, row.amount, row.client]);
     });
 
     db.run("CREATE TABLE quotes (character TEXT, quote TEXT, season INTEGER)");
     quotesData.quotes.forEach(row => {
-      db.run(`INSERT INTO quotes VALUES (?, ?, ?)`, 
+      db.run(`INSERT INTO quotes VALUES (?, ?, ?)`,
         [row.character, row.quote, row.season]);
     });
 
@@ -95,6 +91,7 @@ async function initDB() {
 
     document.getElementById("start-game-btn").disabled = false;
     document.getElementById("start-game-btn").textContent = "🚀 Start Your Sales Career";
+
   } catch (error) {
     console.error("Database initialization failed:", error);
     alert("Failed to initialize database. Please refresh the page.");
@@ -126,83 +123,61 @@ function generateTableHTML(result) {
   `;
 }
 
-// Data preview functionality
-function showDataPreview() {
+// Play random correct sound
+async function playCorrectSound() {
+  const dir = 'assets/sounds/correct/';
   try {
-    const previewDiv = document.getElementById('preview-tables');
-    previewDiv.classList.remove('hidden');
+    const res = await fetch(dir);
+    const text = await res.text();
+    const parser = new DOMParser();
+    const html = parser.parseFromString(text, "text/html");
+    const links = Array.from(html.querySelectorAll("a")).map(a => a.textContent.trim());
+    const validSounds = links.filter(file => file.endsWith(".mp3") && file !== "creed.mp3");
 
-    const salesPreview = db.exec("SELECT employee, COUNT(*) as sales FROM sales GROUP BY employee");
-    let html = "<h3>📊 Employee Sales Count</h3>";
-    html += generateTableHTML(salesPreview);
-
-    const quotesPreview = db.exec("SELECT character, COUNT(*) as quotes FROM quotes GROUP BY character");
-    html += "<h3>📜 Character Quote Count</h3>";
-    html += generateTableHTML(quotesPreview);
-
-    previewDiv.innerHTML = html;
-  } catch (error) {
-    alert("⚠️ Please wait while we load the data...");
-  }
-}
-
-// Mission management
-function loadMission(index) {
-  if (index >= missions.length) {
-    document.getElementById("mission-question").innerText = "🎉 You've completed all missions!";
-    document.getElementById("submit-answer").disabled = true;
-    return;
-  }
-  currentMissionIndex = index;
-  localStorage.setItem('currentMission', currentMissionIndex);
-  document.getElementById("current-level").innerText = index + 1;
-  document.getElementById("mission-question").innerText = missions[index].question;
-  document.getElementById("final-answer").value = "";
-  document.getElementById("query-input").value = "";
-  document.getElementById("query-input").disabled = false;
-  document.getElementById("submit-answer").disabled = false;
-  document.getElementById("feedback").className = "";
-  document.getElementById("feedback").innerHTML = "";
-  document.getElementById("timer").classList.add("hidden");
-  clearInterval(missionInterval);
-}
-
-// Timer functionality
-document.getElementById("start-mission-btn").addEventListener("click", () => {
-  clearInterval(missionInterval);
-  const mission = missions[currentMissionIndex];
-  timeLeft = mission.timeLimit;
-  document.getElementById("time-left").textContent = timeLeft;
-  document.getElementById("timer").classList.remove("hidden");
-  document.getElementById("start-mission-btn").disabled = true;
-  document.getElementById("submit-answer").disabled = false;
-
-  missionInterval = setInterval(() => {
-    timeLeft--;
-    document.getElementById("time-left").textContent = timeLeft;
-    if (timeLeft <= 0) {
-      clearInterval(missionInterval);
-      document.getElementById("submit-answer").disabled = true;
-      document.getElementById("start-mission-btn").disabled = false;
-      showCorrectAnswer();
+    if (validSounds.length > 0) {
+      const randomSound = validSounds[Math.floor(Math.random() * validSounds.length)];
+      new Audio(`${dir}${randomSound}`).play();
     }
-  }, 1000);
-});
+  } catch (e) {
+    console.warn("Could not load correct sounds");
+  }
+}
+
+// Play random incorrect sound
+async function playIncorrectSound() {
+  const dir = 'assets/sounds/incorrect/';
+  try {
+    const res = await fetch(dir);
+    const text = await res.text();
+    const parser = new DOMParser();
+    const html = parser.parseFromString(text, "text/html");
+    const links = Array.from(html.querySelectorAll("a")).map(a => a.textContent.trim());
+    const validSounds = links.filter(file => file.endsWith(".mp3") && file !== "wrong_answer.mp3");
+
+    if (validSounds.length > 0) {
+      const randomSound = validSounds[Math.floor(Math.random() * validSounds.length)];
+      new Audio(`${dir}${randomSound}`).play();
+    }
+  } catch (e) {
+    console.warn("Could not load incorrect sounds");
+  }
+}
 
 // Answer checking
 document.getElementById("submit-answer").addEventListener("click", checkAnswer);
+
 function checkAnswer() {
   const userAnswer = document.getElementById("final-answer").value.trim().toLowerCase();
   const correctAnswer = missions[currentMissionIndex].answer.toLowerCase();
 
   if (userAnswer === correctAnswer) {
+    playCorrectSound(); // Play random correct sound
     document.getElementById("feedback").className = "feedback-correct";
     document.getElementById("feedback").innerHTML = `
       ✅ Correct! XP +${missions[currentMissionIndex].xp}<br>
       🎉 ${getRandomCelebration()}
     `;
     rewards.addXP(missions[currentMissionIndex].xp);
-
     setTimeout(() => {
       currentMissionIndex++;
       localStorage.setItem('currentMission', currentMissionIndex);
@@ -210,6 +185,7 @@ function checkAnswer() {
       document.getElementById("start-mission-btn").disabled = false;
     }, 1500);
   } else {
+    playIncorrectSound(); // Play random incorrect sound
     document.getElementById("feedback").className = "feedback-error";
     document.getElementById("feedback").innerText = "❌ Incorrect. Try again!";
   }
@@ -251,6 +227,68 @@ function displayResult(result) {
     return;
   }
   output.innerHTML = "<table>" + generateTableHTML(result) + "</table>";
+}
+
+// Mission loading
+function loadMission(index) {
+  if (index >= missions.length) {
+    document.getElementById("mission-question").innerText = "🎉 You've completed all missions!";
+    document.getElementById("submit-answer").disabled = true;
+    return;
+  }
+
+  currentMissionIndex = index;
+  localStorage.setItem('currentMission', currentMissionIndex);
+  document.getElementById("current-level").innerText = index + 1;
+  document.getElementById("mission-question").innerText = missions[index].question;
+  document.getElementById("final-answer").value = "";
+  document.getElementById("query-input").value = "";
+  document.getElementById("query-input").disabled = false;
+  document.getElementById("submit-answer").disabled = false;
+  document.getElementById("feedback").className = "";
+  document.getElementById("feedback").innerHTML = "";
+  document.getElementById("timer").classList.add("hidden");
+  clearInterval(missionInterval);
+}
+
+// Timer functionality
+document.getElementById("start-mission-btn").addEventListener("click", () => {
+  clearInterval(missionInterval);
+  const mission = missions[currentMissionIndex];
+  timeLeft = mission.timeLimit;
+  document.getElementById("time-left").textContent = timeLeft;
+  document.getElementById("timer").classList.remove("hidden");
+  document.getElementById("start-mission-btn").disabled = true;
+  document.getElementById("submit-answer").disabled = false;
+  missionInterval = setInterval(() => {
+    timeLeft--;
+    document.getElementById("time-left").textContent = timeLeft;
+    if (timeLeft <= 0) {
+      clearInterval(missionInterval);
+      document.getElementById("submit-answer").disabled = true;
+      document.getElementById("start-mission-btn").disabled = false;
+    }
+  }, 1000);
+});
+
+// Data preview
+function showDataPreview() {
+  try {
+    const previewDiv = document.getElementById('preview-tables');
+    previewDiv.classList.remove('hidden');
+
+    const salesPreview = db.exec("SELECT employee, COUNT(*) as sales FROM sales GROUP BY employee");
+    let html = "<h3>📊 Employee Sales Count</h3>";
+    html += generateTableHTML(salesPreview);
+
+    const quotesPreview = db.exec("SELECT character, COUNT(*) as quotes FROM quotes GROUP BY character");
+    html += "<h3>📜 Character Quote Count</h3>";
+    html += generateTableHTML(quotesPreview);
+
+    previewDiv.innerHTML = html;
+  } catch (error) {
+    alert("⚠️ Please wait while we load the data...");
+  }
 }
 
 // Game flow control
