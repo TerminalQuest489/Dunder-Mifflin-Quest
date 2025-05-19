@@ -3,8 +3,7 @@ let currentMissionIndex = parseInt(localStorage.getItem('currentMission')) || 0;
 let timeLeft = 0;
 let missionInterval;
 
-// --- STEP 1: Define helper functions FIRST ---
-
+// Helper functions
 function updateProgressBar() {
   const percent = ((rewards.xp % 100) / 100) * 100;
   document.getElementById("xp-progress-bar").style.width = `${percent}%`;
@@ -12,27 +11,26 @@ function updateProgressBar() {
 
 function getRandomCelebration() {
   const celebrations = [
-    "That''s what she said!",
+    "That's what she said!",
     "Bears. Beets. Battlestar Galactica!",
     "Identity theft is not a joke, Jim!",
-    "You''re winner!",
+    "You're winner!",
     "Assistant to the Regional Manager!",
-    "That''s a Stanley nickel!"
+    "That's a Stanley nickel!"
   ];
   return celebrations[Math.floor(Math.random() * celebrations.length)];
 }
 
-// --- STEP 2: Define missions ---
-
+// Missions data
 const missions = [
   { question: "How many sales did Dwight make?", answer: "134", xp: 50, achievement: "Sales Counting Rookie", timeLimit: 60 },
-  { question: "What''s the total sales amount made by Jim?", answer: "42675", xp: 100, achievement: "Sales Totals Master", timeLimit: 50 },
+  { question: "What's the total sales amount made by Jim?", answer: "42675", xp: 100, achievement: "Sales Totals Master", timeLimit: 50 },
   { question: "How many clients bought more than one product?", answer: "27", xp: 150, achievement: "Client Analyst", timeLimit: 40 },
-  { question: "What''s the most sold product by total sales?", answer: "Paper", xp: 200, achievement: "Product Expert", timeLimit: 30 },
+  { question: "What's the most sold product by total sales?", answer: "Paper", xp: 200, achievement: "Product Expert", timeLimit: 30 },
   { question: "Who has the highest average sale amount?", answer: "Dwight Schrute", xp: 250, achievement: "Sales Champion", timeLimit: 25 }
 ];
 
-// --- STEP 3: Initialize rewards system ---
+// Rewards system
 const rewards = new class {
   constructor() {
     this.xp = parseInt(localStorage.getItem('xp')) || 0;
@@ -65,7 +63,7 @@ const rewards = new class {
   }
 };
 
-// --- STEP 4: Database initialization ---
+// Database initialization
 async function initDB() {
   try {
     const SQL = await initSqlJs({
@@ -73,7 +71,7 @@ async function initDB() {
     });
     db = new SQL.Database();
 
-    // Create tables with properly escaped quotes
+    // Create and populate sales table
     db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
     db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 500, 'AAA Paper')");
     db.run("INSERT INTO sales VALUES ('Jim', 'Printer', 300, 'Dunder Corp')");
@@ -81,12 +79,29 @@ async function initDB() {
     db.run("INSERT INTO sales VALUES ('Pam', 'Notebooks', 120, 'Office Dreams')");
     db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 750, 'Paper World')");
 
+    // Create quotes table
     db.run("CREATE TABLE quotes (character TEXT, quote TEXT, season INTEGER)");
-    db.run("INSERT INTO quotes VALUES ('Michael', 'That''s what she said!', 2)");
-    db.run("INSERT INTO quotes VALUES ('Dwight', 'Bears. Beets. Battlestar Galactica.', 3)");
-    db.run("INSERT INTO quotes VALUES ('Michael', 'I''m not superstitious, but I am a little stitious.', 4)");
-    db.run("INSERT INTO quotes VALUES ('Jim', 'Bears do not... What is going on?! What are you doing?!', 3)");
-    db.run("INSERT INTO quotes VALUES ('Michael', 'Would I rather be feared or loved? Easy. Both.', 2)");
+
+    // Load quotes from JSON file
+    try {
+      const response = await fetch('data/michael_quotes.json');
+      if (!response.ok) throw new Error('Failed to load quotes');
+      const { quotes } = await response.json();
+
+      // Insert each quote with proper SQL escaping
+      const stmt = db.prepare("INSERT INTO quotes VALUES (?, ?, ?)");
+      quotes.forEach(({ character, quote, season }) => {
+        stmt.bind([character, quote, season]);
+        stmt.step();
+        stmt.reset();
+      });
+      stmt.free();
+    } catch (error) {
+      console.error("Error loading quotes:", error);
+      // Fallback to default quotes
+      db.run("INSERT INTO quotes VALUES ('Michael', 'That''s what she said!', 2)");
+      db.run("INSERT INTO quotes VALUES ('Dwight', 'Bears. Beets. Battlestar Galactica.', 3)");
+    }
 
     updateTable('sales', 50);
     updateTable('quotes', 50);
@@ -94,7 +109,6 @@ async function initDB() {
     // Enable buttons
     document.getElementById("preview-data-btn").disabled = false;
     document.getElementById("preview-data-btn").textContent = "👀 Show Sample Data";
-
     document.getElementById("start-game-btn").disabled = false;
     document.getElementById("start-game-btn").textContent = "🚀 Start Your Sales Career";
 
@@ -104,8 +118,7 @@ async function initDB() {
   }
 }
 
-// --- STEP 5: Table management ---
-
+// Table management
 function updateTable(tableName, limit = 50) {
   try {
     const result = db.exec(`SELECT * FROM ${tableName} LIMIT ${limit}`);
@@ -130,8 +143,7 @@ function generateTableHTML(result) {
   `;
 }
 
-// --- STEP 6: Data preview functionality ---
-
+// Data preview functionality
 function showDataPreview() {
   try {
     const previewDiv = document.getElementById('preview-tables');
@@ -146,17 +158,15 @@ function showDataPreview() {
     html += generateTableHTML(quotesPreview);
 
     previewDiv.innerHTML = html;
-
   } catch (error) {
     alert("⚠️ Please wait while we load the data...");
   }
 }
 
-// --- STEP 7: Mission management ---
-
+// Mission management
 function loadMission(index) {
   if (index >= missions.length) {
-    document.getElementById("mission-question").innerText = "🎉 You''ve completed all missions!";
+    document.getElementById("mission-question").innerText = "🎉 You've completed all missions!";
     document.getElementById("submit-answer").disabled = true;
     return;
   }
@@ -175,8 +185,7 @@ function loadMission(index) {
   clearInterval(missionInterval);
 }
 
-// --- STEP 8: Timer functionality ---
-
+// Timer functionality
 document.getElementById("start-mission-btn").addEventListener("click", () => {
   clearInterval(missionInterval);
   const mission = missions[currentMissionIndex];
@@ -197,17 +206,7 @@ document.getElementById("start-mission-btn").addEventListener("click", () => {
   }, 1000);
 });
 
-// --- STEP 9: Play correct sound (optional) ---
-
-function showCorrectAnswer() {
-  const audio = new Audio('assets/sounds/correct.mp3');
-  try {
-    audio.play();
-  } catch {}
-}
-
-// --- STEP 10: Answer checking ---
-
+// Answer checking
 document.getElementById("submit-answer").addEventListener("click", checkAnswer);
 
 function checkAnswer() {
@@ -233,8 +232,7 @@ function checkAnswer() {
   }
 }
 
-// --- STEP 11: Query execution ---
-
+// Query execution
 document.getElementById("query-input").addEventListener("keydown", function(e) {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -259,21 +257,16 @@ function displayResult(result) {
   output.innerHTML = "<table>" + generateTableHTML(result) + "</table>";
 }
 
-// --- STEP 12: Game flow control ---
-
+// Game flow control
 function startGame() {
   document.getElementById("intro-screen").style.display = "none";
   document.getElementById("game-ui").style.display = "block";
   loadMission(currentMissionIndex);
 }
 
-// --- STEP 13: Event listeners ---
-
+// Event listeners
 document.getElementById("preview-data-btn").addEventListener("click", showDataPreview);
 document.getElementById("start-game-btn").addEventListener("click", startGame);
 
-// --- STEP 14: Initialize application ---
-
-document.addEventListener("DOMContentLoaded", () => {
-  initDB();
-});
+// Initialize application
+document.addEventListener("DOMContentLoaded", initDB);
