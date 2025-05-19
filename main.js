@@ -12,12 +12,12 @@ function updateProgressBar() {
 
 function getRandomCelebration() {
   const celebrations = [
-    "That's what she said!",
+    "That''s what she said!",
     "Bears. Beets. Battlestar Galactica!",
     "Identity theft is not a joke, Jim!",
-    "You're winner!",
+    "You''re winner!",
     "Assistant to the Regional Manager!",
-    "That's a Stanley nickel!"
+    "That''s a Stanley nickel!"
   ];
   return celebrations[Math.floor(Math.random() * celebrations.length)];
 }
@@ -26,9 +26,9 @@ function getRandomCelebration() {
 
 const missions = [
   { question: "How many sales did Dwight make?", answer: "134", xp: 50, achievement: "Sales Counting Rookie", timeLimit: 60 },
-  { question: "What's the total sales amount made by Jim?", answer: "42675", xp: 100, achievement: "Sales Totals Master", timeLimit: 50 },
+  { question: "What''s the total sales amount made by Jim?", answer: "42675", xp: 100, achievement: "Sales Totals Master", timeLimit: 50 },
   { question: "How many clients bought more than one product?", answer: "27", xp: 150, achievement: "Client Analyst", timeLimit: 40 },
-  { question: "What's the most sold product by total sales?", answer: "Paper", xp: 200, achievement: "Product Expert", timeLimit: 30 },
+  { question: "What''s the most sold product by total sales?", answer: "Paper", xp: 200, achievement: "Product Expert", timeLimit: 30 },
   { question: "Who has the highest average sale amount?", answer: "Dwight Schrute", xp: 250, achievement: "Sales Champion", timeLimit: 25 }
 ];
 
@@ -61,7 +61,7 @@ const rewards = new class {
     document.getElementById("xp").innerText = this.xp;
     document.getElementById("level").innerText = this.level;
     document.getElementById("achievements").innerText = this.achievements.join(", ") || "None";
-    updateProgressBar(); // Safe now because everything is defined
+    updateProgressBar();
   }
 };
 
@@ -73,7 +73,7 @@ async function initDB() {
     });
     db = new SQL.Database();
 
-    // Create tables
+    // Create tables with properly escaped quotes
     db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
     db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 500, 'AAA Paper')");
     db.run("INSERT INTO sales VALUES ('Jim', 'Printer', 300, 'Dunder Corp')");
@@ -85,7 +85,7 @@ async function initDB() {
     db.run("INSERT INTO quotes VALUES ('Michael', 'That''s what she said!', 2)");
     db.run("INSERT INTO quotes VALUES ('Dwight', 'Bears. Beets. Battlestar Galactica.', 3)");
     db.run("INSERT INTO quotes VALUES ('Michael', 'I''m not superstitious, but I am a little stitious.', 4)");
-    db.run("INSERT INTO quotes VALUES ('Jim', 'Bears do not... What is going on?! What are you doing?!", 3)");
+    db.run("INSERT INTO quotes VALUES ('Jim', 'Bears do not... What is going on?! What are you doing?!', 3)");
     db.run("INSERT INTO quotes VALUES ('Michael', 'Would I rather be feared or loved? Easy. Both.', 2)");
 
     updateTable('sales', 50);
@@ -156,7 +156,7 @@ function showDataPreview() {
 
 function loadMission(index) {
   if (index >= missions.length) {
-    document.getElementById("mission-question").innerText = "🎉 You've completed all missions!";
+    document.getElementById("mission-question").innerText = "🎉 You''ve completed all missions!";
     document.getElementById("submit-answer").disabled = true;
     return;
   }
