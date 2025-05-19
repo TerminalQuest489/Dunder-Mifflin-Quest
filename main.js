@@ -1,107 +1,97 @@
 // ======================
-// GAME STATE VARIABLES
+// EVENT HANDLERS (ADD THIS SECTION BEFORE DOMContentLoaded)
 // ======================
-let db;
-let currentMissionIndex = parseInt(localStorage.getItem('currentMission')) || 0;
-let timeLeft = 0;
-let missionInterval;
-
-// ======================
-// HELPER FUNCTIONS (NO DEPENDENCIES)
-// ======================
-function updateProgressBar(xp) {
-  const progressBar = document.getElementById("xp-progress-bar");
-  if (progressBar) {
-    const percent = ((xp % 100) / 100) * 100;
-    progressBar.style.width = `${percent}%`;
-  }
-}
-
-function getRandomCelebration() {
-  const celebrations = [
-    "That's what she said!",
-    "Bears. Beets. Battlestar Galactica!",
-    "Identity theft is not a joke, Jim!",
-    "You're winner!",
-    "Assistant to the Regional Manager!",
-    "That's a Stanley nickel!"
-  ];
-  return celebrations[Math.floor(Math.random() * celebrations.length)];
-}
-
-// ======================
-// REWARDS SYSTEM (DEFINED FIRST)
-// ======================
-class RewardsSystem {
-  constructor() {
-    this.xp = parseInt(localStorage.getItem('xp')) || 0;
-    this.level = Math.floor(this.xp / 100) + 1;
-    this.achievements = JSON.parse(localStorage.getItem('achievements')) || [];
-    this.queueUIUpdate();
-  }
-
-  queueUIUpdate() {
-    if (document.readyState === 'complete') {
-      this.updateUI();
-    } else {
-      document.addEventListener('DOMContentLoaded', () => this.updateUI());
-    }
-  }
-
-  addXP(amount) {
-    this.xp += amount;
-    this.level = Math.floor(this.xp / 100) + 1;
-    localStorage.setItem('xp', this.xp.toString());
-    this.updateUI();
-  }
-
-  updateUI() {
-    const safeUpdate = () => {
-      const xpElement = document.getElementById("xp");
-      const levelElement = document.getElementById("level");
-      const achievementsElement = document.getElementById("achievements");
-      
-      if (xpElement) xpElement.textContent = this.xp;
-      if (levelElement) levelElement.textContent = this.level;
-      if (achievementsElement) {
-        achievementsElement.textContent = this.achievements.join(", ") || "None";
+function setupEventListeners() {
+  // Preview Data Button
+  document.getElementById("preview-data-btn")?.addEventListener("click", showDataPreview);
+  
+  // Start Game Button
+  document.getElementById("start-game-btn")?.addEventListener("click", startGame);
+  
+  // Mission Timer
+  document.getElementById("start-mission-btn")?.addEventListener("click", () => {
+    clearInterval(missionInterval);
+    const mission = missions[currentMissionIndex];
+    timeLeft = mission.timeLimit;
+    
+    const timeLeftElement = document.getElementById("time-left");
+    const timerElement = document.getElementById("timer");
+    const startMissionBtn = document.getElementById("start-mission-btn");
+    const submitAnswer = document.getElementById("submit-answer");
+    
+    if (timeLeftElement) timeLeftElement.textContent = timeLeft;
+    if (timerElement) timerElement.classList.remove("hidden");
+    if (startMissionBtn) startMissionBtn.disabled = true;
+    if (submitAnswer) submitAnswer.disabled = false;
+    
+    missionInterval = setInterval(() => {
+      timeLeft--;
+      if (timeLeftElement) timeLeftElement.textContent = timeLeft;
+      if (timeLeft <= 0) {
+        clearInterval(missionInterval);
+        if (submitAnswer) submitAnswer.disabled = true;
+        if (startMissionBtn) startMissionBtn.disabled = false;
       }
+    }, 1000);
+  });
+
+  // Answer Submission
+  document.getElementById("submit-answer")?.addEventListener("click", () => {
+    const finalAnswer = document.getElementById("final-answer");
+    const feedback = document.getElementById("feedback");
+    
+    if (!finalAnswer || !feedback) return;
+    
+    const userAnswer = finalAnswer.value.trim().toLowerCase();
+    const correctAnswer = missions[currentMissionIndex].answer.toLowerCase();
+
+    if (userAnswer === correctAnswer) {
+      feedback.className = "feedback-correct";
+      feedback.innerHTML = `
+        ✅ Correct! XP +${missions[currentMissionIndex].xp}<br>
+        🎉 ${getRandomCelebration()}
+      `;
+      rewards.addXP(missions[currentMissionIndex].xp);
       
-      updateProgressBar(this.xp);
-    };
-
-    // Retry mechanism for DOM elements
-    try {
-      safeUpdate();
-    } catch (e) {
-      setTimeout(safeUpdate, 50);
+      setTimeout(() => {
+        currentMissionIndex++;
+        localStorage.setItem('currentMission', currentMissionIndex.toString());
+        loadMission(currentMissionIndex);
+        document.getElementById("start-mission-btn")?.disabled = false;
+      }, 1500);
+    } else {
+      feedback.className = "feedback-error";
+      feedback.textContent = "❌ Incorrect. Try again!";
     }
-  }
+  });
 
-  unlockAchievement(name) {
-    if (name && !this.achievements.includes(name)) {
-      this.achievements.push(name);
-      localStorage.setItem('achievements', JSON.stringify(this.achievements));
-      alert(`🏆 Achievement Unlocked: ${name}`);
+  // SQL Input
+  document.getElementById("query-input")?.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const userQuery = this.value.trim();
+      const output = document.getElementById("feedback");
+      if (!output) return;
+      
+      try {
+        const result = db.exec(userQuery);
+        output.className = "";
+        output.innerHTML = result?.length 
+          ? "<table>" + generateTableHTML(result) + "</table>"
+          : "No results found.";
+      } catch (error) {
+        output.className = "";
+        output.innerHTML = `<table><thead><tr><th>Error</th></tr></thead>
+                          <tbody><tr><td>${error.message}</td></tr></tbody></table>`;
+      }
     }
-  }
+  });
 }
 
 // ======================
-// INITIALIZE REWARDS SYSTEM
+// INITIALIZATION (KEEP THIS AT THE BOTTOM)
 // ======================
-const rewards = new RewardsSystem();
-
-// ======================
-// REST OF THE CODE
-// ======================
-// [Keep all other code from previous versions, ensuring:
-// 1. No references to rewards before this line
-// 2. All helper functions only use rewards after this point
-// 3. All DOM operations wait for DOMContentLoaded]
-
-// Set up everything when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  setupEventListeners();
+  setupEventListeners(); // Now this will work
   initDB();
 });
