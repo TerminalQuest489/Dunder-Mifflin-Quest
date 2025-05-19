@@ -7,7 +7,7 @@ let timeLeft = 0;
 let missionInterval;
 
 // ======================
-// HELPER FUNCTIONS (NO DEPENDENCIES)
+// HELPER FUNCTIONS
 // ======================
 function updateProgressBar(xp) {
   const progressBar = document.getElementById("xp-progress-bar");
@@ -29,67 +29,19 @@ function getRandomCelebration() {
   return celebrations[Math.floor(Math.random() * celebrations.length)];
 }
 
-// ======================
-// REWARDS SYSTEM (DEFINED FIRST)
-// ======================
-class RewardsSystem {
-  constructor() {
-    this.xp = parseInt(localStorage.getItem('xp')) || 0;
-    this.level = Math.floor(this.xp / 100) + 1;
-    this.achievements = JSON.parse(localStorage.getItem('achievements')) || [];
-    this.queueUIUpdate();
-  }
-
-  queueUIUpdate() {
-    if (document.readyState === 'complete') {
-      this.updateUI();
-    } else {
-      document.addEventListener('DOMContentLoaded', () => this.updateUI());
-    }
-  }
-
-  addXP(amount) {
-    this.xp += amount;
-    this.level = Math.floor(this.xp / 100) + 1;
-    localStorage.setItem('xp', this.xp.toString());
-    this.updateUI();
-  }
-
-  updateUI() {
-    const safeUpdate = () => {
-      const xpElement = document.getElementById("xp");
-      const levelElement = document.getElementById("level");
-      const achievementsElement = document.getElementById("achievements");
-      
-      if (xpElement) xpElement.textContent = this.xp;
-      if (levelElement) levelElement.textContent = this.level;
-      if (achievementsElement) {
-        achievementsElement.textContent = this.achievements.join(", ") || "None";
-      }
-      
-      updateProgressBar(this.xp);
-    };
-
-    try {
-      safeUpdate();
-    } catch (e) {
-      setTimeout(safeUpdate, 50);
-    }
-  }
-
-  unlockAchievement(name) {
-    if (name && !this.achievements.includes(name)) {
-      this.achievements.push(name);
-      localStorage.setItem('achievements', JSON.stringify(this.achievements));
-      alert(`🏆 Achievement Unlocked: ${name}`);
-    }
-  }
+function generateTableHTML(result) {
+  if (!result || !result.length) return "";
+  return `
+    <thead><tr>${
+      result[0].columns.map(col => `<th>${col}</th>`).join("")
+    }</tr></thead>
+    <tbody>${
+      result[0].values.map(row => `
+        <tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>
+      `).join("")
+    }</tbody>
+  `;
 }
-
-// ======================
-// INITIALIZE REWARDS SYSTEM
-// ======================
-const rewards = new RewardsSystem();
 
 // ======================
 // GAME DATA
@@ -133,7 +85,66 @@ const missions = [
 ];
 
 // ======================
-// DATABASE FUNCTIONS
+// REWARDS SYSTEM CLASS
+// ======================
+class RewardsSystem {
+  constructor() {
+    this.xp = parseInt(localStorage.getItem('xp')) || 0;
+    this.level = Math.floor(this.xp / 100) + 1;
+    this.achievements = JSON.parse(localStorage.getItem('achievements')) || [];
+    this.scheduleUIUpdate();
+  }
+
+  scheduleUIUpdate() {
+    if (document.readyState === 'complete') {
+      this.updateUI();
+    } else {
+      document.addEventListener('DOMContentLoaded', () => this.updateUI());
+    }
+  }
+
+  addXP(amount) {
+    this.xp += amount;
+    this.level = Math.floor(this.xp / 100) + 1;
+    localStorage.setItem('xp', this.xp.toString());
+    this.unlockAchievement(missions[currentMissionIndex]?.achievement);
+    this.updateUI();
+  }
+
+  unlockAchievement(name) {
+    if (name && !this.achievements.includes(name)) {
+      this.achievements.push(name);
+      localStorage.setItem('achievements', JSON.stringify(this.achievements));
+      alert(`🏆 Achievement Unlocked: ${name}`);
+    }
+  }
+
+  updateUI() {
+    const safeUpdate = () => {
+      const xpElement = document.getElementById("xp");
+      const levelElement = document.getElementById("level");
+      const achievementsElement = document.getElementById("achievements");
+      
+      if (xpElement) xpElement.textContent = this.xp;
+      if (levelElement) levelElement.textContent = this.level;
+      if (achievementsElement) {
+        achievementsElement.textContent = this.achievements.join(", ") || "None";
+      }
+      
+      updateProgressBar(this.xp);
+    };
+
+    // Try immediately, or wait briefly if DOM isn't ready
+    try {
+      safeUpdate();
+    } catch (e) {
+      setTimeout(safeUpdate, 50);
+    }
+  }
+}
+
+// ======================
+// GAME CORE FUNCTIONALITY
 // ======================
 async function initDB() {
   try {
@@ -142,7 +153,7 @@ async function initDB() {
     });
     db = new SQL.Database();
 
-    // Create sales table
+    // Create and populate sales table
     db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT)");
     db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 500, 'AAA Paper')");
     db.run("INSERT INTO sales VALUES ('Jim', 'Printer', 300, 'Dunder Corp')");
@@ -150,7 +161,7 @@ async function initDB() {
     db.run("INSERT INTO sales VALUES ('Pam', 'Notebooks', 120, 'Office Dreams')");
     db.run("INSERT INTO sales VALUES ('Dwight', 'Paper', 750, 'Paper World')");
 
-    // Create quotes table from JSON
+    // Create and populate quotes table from JSON
     db.run("CREATE TABLE quotes (character TEXT, quote TEXT, season INTEGER)");
     try {
       const response = await fetch('data/michael_quotes.json');
@@ -166,6 +177,7 @@ async function initDB() {
       }
     } catch (error) {
       console.error("Error loading quotes:", error);
+      // Fallback quotes
       db.run("INSERT INTO quotes VALUES ('Michael', 'That''s what she said!', 2)");
       db.run("INSERT INTO quotes VALUES ('Dwight', 'Bears. Beets. Battlestar Galactica.', 3)");
     }
@@ -193,20 +205,6 @@ function updateTable(tableName, limit = 50) {
   }
 }
 
-function generateTableHTML(result) {
-  if (!result || !result.length) return "";
-  return `
-    <thead><tr>${
-      result[0].columns.map(col => `<th>${col}</th>`).join("")
-    }</tr></thead>
-    <tbody>${
-      result[0].values.map(row => `
-        <tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>
-      `).join("")
-    }</tbody>
-  `;
-}
-
 function enableGameButtons() {
   const previewBtn = document.getElementById("preview-data-btn");
   const startBtn = document.getElementById("start-game-btn");
@@ -215,6 +213,7 @@ function enableGameButtons() {
     previewBtn.disabled = false;
     previewBtn.textContent = "👀 Show Sample Data";
   }
+  
   if (startBtn) {
     startBtn.disabled = false;
     startBtn.textContent = "🚀 Start Your Sales Career";
@@ -229,6 +228,7 @@ function showDataPreview() {
   if (!previewDiv) return;
 
   previewDiv.classList.remove('hidden');
+  
   try {
     const salesPreview = db.exec("SELECT employee, COUNT(*) as sales FROM sales GROUP BY employee");
     const quotesPreview = db.exec("SELECT character, COUNT(*) as quotes FROM quotes GROUP BY character");
@@ -269,9 +269,15 @@ function loadMission(index) {
   if (elements.level) elements.level.textContent = index + 1;
   if (elements.question) elements.question.textContent = missions[index].question;
   if (elements.answer) elements.answer.value = "";
-  if (elements.query) elements.query.value = "";
+  if (elements.query) {
+    elements.query.value = "";
+    elements.query.disabled = false;
+  }
   if (elements.submit) elements.submit.disabled = false;
-  if (elements.feedback) elements.feedback.innerHTML = "";
+  if (elements.feedback) {
+    elements.feedback.className = "";
+    elements.feedback.innerHTML = "";
+  }
   if (elements.timer) elements.timer.classList.add("hidden");
   
   clearInterval(missionInterval);
@@ -291,13 +297,13 @@ function startGame() {
 // EVENT HANDLERS
 // ======================
 function setupEventListeners() {
-  // Preview Data
+  // Preview Data Button
   document.getElementById("preview-data-btn")?.addEventListener("click", showDataPreview);
   
-  // Start Game
+  // Start Game Button
   document.getElementById("start-game-btn")?.addEventListener("click", startGame);
   
-  // Missions
+  // Mission Timer
   document.getElementById("start-mission-btn")?.addEventListener("click", () => {
     clearInterval(missionInterval);
     const mission = missions[currentMissionIndex];
@@ -316,6 +322,7 @@ function setupEventListeners() {
     missionInterval = setInterval(() => {
       timeLeft--;
       if (timeLeftElement) timeLeftElement.textContent = timeLeft;
+      
       if (timeLeft <= 0) {
         clearInterval(missionInterval);
         if (submitAnswer) submitAnswer.disabled = true;
@@ -323,7 +330,7 @@ function setupEventListeners() {
       }
     }, 1000);
   });
-
+  
   // Answer Submission
   document.getElementById("submit-answer")?.addEventListener("click", () => {
     const finalAnswer = document.getElementById("final-answer");
@@ -346,15 +353,15 @@ function setupEventListeners() {
         currentMissionIndex++;
         localStorage.setItem('currentMission', currentMissionIndex.toString());
         loadMission(currentMissionIndex);
-        document.getElementById("start-mission-btn")?.disabled = false;
+        document.getElementById("start-mission-btn")?.removeAttribute("disabled");
       }, 1500);
     } else {
       feedback.className = "feedback-error";
       feedback.textContent = "❌ Incorrect. Try again!";
     }
   });
-
-  // SQL Input
+  
+  // SQL Query Input
   document.getElementById("query-input")?.addEventListener("keydown", function(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -380,6 +387,11 @@ function setupEventListeners() {
 // ======================
 // INITIALIZATION
 // ======================
+
+// Initialize rewards system
+const rewards = new RewardsSystem();
+
+// Set up everything when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
   initDB();
