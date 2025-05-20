@@ -1,73 +1,68 @@
 <!DOCTYPE html>
-<html lang="en" class="office-theme">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📜 SQL Quest: The Office Edition</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SQL Quest: The Office Edition</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
+  <script defer src="main.js"></script>
 </head>
-<body>
-  <div id="game-container">
-    <!-- Intro Screen -->
-    <div id="intro-screen">
-      <h1>📜 SQL Quest: The Office Edition</h1>
-      <p>You're on a quest to become the <strong>World's Best Paper Salesman</strong>.</p>
-      <p>Your opponent: <strong>Dwight Schrute</strong> — the #1 seller at Dunder Mifflin.</p>
-      <p>Solve SQL challenges to prove your skills. The harder the query, the more XP you earn!</p>
-
-      <div id="data-preview">
-        <h2>📋 Data Preview</h2>
-        <button id="preview-data-btn" disabled>👀 Loading Data...</button>
-        <div id="preview-tables" class="hidden"></div>
-      </div>
-
-      <button id="start-game-btn" disabled>🚀 Starting Game...</button>
-    </div>
-
-    <!-- Game UI -->
-    <div id="game-ui" style="display: none;">
-      <h1>💼 Dunder Mifflin SQL Terminal</h1>
-
-      <div id="player-stats">
-        <strong>XP:</strong> <span id="xp">0</span> |
-        <strong>Level:</strong> <span id="level">1</span> |
-        <strong>Achievements:</strong> <span id="achievements">None</span>
-        <div id="xp-progress-bar" class="progress-bar"></div>
-      </div>
-
-      <div id="data-tables">
-        <div class="table-container">
-          <h2>📊 Dunder Mifflin Sales Data</h2>
-          <table id="sales-table"></table>
-        </div>
-        <div class="table-container">
-          <h2>📜 Michael’s Best Quotes</h2>
-          <table id="quotes-table"></table>
-        </div>
-      </div>
-
-      <div id="mission-area">
-        <h2>🎯 Mission <span id="current-level">1</span>: <span id="mission-question"></span></h2>
-        <button id="start-mission-btn" style="display: none;">⏰ Start Mission</button>
-        <div id="timer" class="hidden">⏰ Time left: <span id="time-left">0</span>s</div>
-
-        <h3>🔍 Run Your SQL Query Below</h3>
-        <textarea id="query-input" placeholder="SELECT * FROM sales WHERE employee = 'Dwight Schrute';"></textarea>
-        <br />
-        <button id="run-query-btn">▶️ Run Query</button>
-        <div id="query-results"></div>
-
-        <h3>📝 Enter Your Final Answer</h3>
-        <input type="text" id="final-answer" placeholder="Type your answer here..." />
-        <button id="submit-answer" disabled>✅ Submit Answer</button>
-        <div id="feedback"></div>
-      </div>
+<body class="office-theme">
+  <div id="intro-screen" class="screen active">
+    <h1>🧠 SQL Quest: The Office Edition</h1>
+    <p>Welcome to the Scranton Branch of Dunder Mifflin. You’re the new data analyst here, and Dwight Schrute is breathing down your neck.</p>
+    <p>Your mission: solve SQL puzzles using real sales data, rise through the ranks, and earn your Dundie Award. Can you out-analyze Dwight?</p>
+    <div class="button-row">
+      <button id="preview-btn" disabled>🔍 Preview Data (Loading...)</button>
+      <button id="start-btn" disabled>🚀 Start Game (Loading...)</button>
     </div>
   </div>
 
-  <!-- Load sql.js from CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/sql-wasm.js"></script>
-  <!-- Load your main game logic -->
-  <script src="main.js"></script>
+  <div id="game-ui" class="screen hidden">
+    <header>
+      <h2>📊 SQL Quest: The Office Edition</h2>
+      <div class="stats">
+        <span>⭐ XP: <span id="xp">0</span></span>
+        <span>🎯 Level: <span id="level">1</span></span>
+        <span>🏆 Achievements: <span id="achievements">0</span></span>
+      </div>
+      <div class="progress-bar">
+        <div id="xp-bar" class="bar-fill" style="width: 0%"></div>
+      </div>
+    </header>
+
+    <section id="mission-section">
+      <h3 id="mission-title">Mission Title</h3>
+      <p id="mission-description">Mission description goes here...</p>
+      <button id="hint-btn">💡 Hint</button>
+    </section>
+
+    <section id="query-section">
+      <label for="query-input">💻 Write your SQL query:</label>
+      <textarea id="query-input" rows="5" placeholder="SELECT * FROM sales WHERE..."></textarea>
+      <button id="run-query-btn">▶️ Run Query</button>
+      <button id="submit-answer-btn">✅ Submit Answer</button>
+    </section>
+
+    <section id="result-section">
+      <h4>🧾 Query Results</h4>
+      <div id="query-results"></div>
+    </section>
+
+    <section id="answer-section">
+      <label for="final-answer">✍️ Final Answer:</label>
+      <input type="text" id="final-answer" placeholder="e.g., 56000" />
+    </section>
+
+    <section id="feedback">
+      <p id="feedback-message"></p>
+    </section>
+
+    <footer>
+      <button id="toggle-timer-btn">⏱️ Toggle Timer</button>
+      <span id="timer" class="hidden">00:00</span>
+    </footer>
+  </div>
 </body>
 </html>
