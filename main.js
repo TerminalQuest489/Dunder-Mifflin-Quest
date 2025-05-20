@@ -35,7 +35,7 @@ let timerInterval;
 async function loadData() {
   const response = await fetch(DATABASE_URL);
   const json = await response.json();
-  const SQL = await initSqlJs({ locateFile: filename => https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/${filename} });
+  const SQL = await initSqlJs({   locateFile: filename => `https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/${filename}` });
   db = new SQL.Database();
   db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT);");
   const insert = db.prepare("INSERT INTO sales VALUES (?, ?, ?, ?);");
@@ -165,8 +165,8 @@ function evaluateAnswer() {
   if (isCorrect) {
     xp += 100;
     level++;
-    achievements.push(✔️ Mission ${currentMission + 1});
-    document.getElementById("feedback").textContent = ✅ Correct! You've completed the mission.;
+    achievements.push(`✔️ Mission ${currentMission + 1}`);
+    document.getElementById("feedback").textContent = `✅ Correct! You've completed the mission.`;
     updateStats();
     currentMission++;
     if (currentMission < missions.length) {
@@ -183,7 +183,7 @@ function evaluateAnswer() {
       document.getElementById("submit-answer").disabled = true;
     }
   } else {
-    document.getElementById("feedback").textContent = ❌ Incorrect. Hint: ${missions[currentMission].answerHint};
+    document.getElementById("feedback").textContent = `❌ Incorrect. Hint: ${missions[currentMission].answerHint}`;
   }
 }
 
@@ -192,7 +192,7 @@ function updateStats() {
   document.getElementById("level").textContent = level;
   document.getElementById("achievements").textContent = achievements.join(", ") || "None";
   const bar = document.getElementById("xp-progress-bar");
-  bar.style.width = ${(xp % 100) + 1}%;
+  bar.style.width = `${(xp % 100) + 1}%`;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
