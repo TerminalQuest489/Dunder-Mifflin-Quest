@@ -35,7 +35,7 @@ let timerInterval;
 async function loadData() {
   const response = await fetch(DATABASE_URL);
   const json = await response.json();
-  const SQL = await initSqlJs({   locateFile: filename => `https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/${filename}` });
+  const SQL = await initSqlJs({ locateFile: filename => `https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/${filename}` });
   db = new SQL.Database();
   db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT);");
   const insert = db.prepare("INSERT INTO sales VALUES (?, ?, ?, ?);");
@@ -157,7 +157,7 @@ function evaluateAnswer() {
       rows = values.map(row => Object.fromEntries(row.map((v, i) => [cols[i], v])));
     }
   } catch (e) {
-    document.getElementById("feedback").textContent = ❌ Error: ${e.message};
+    document.getElementById("feedback").textContent = `❌ Error: ${e.message}`;
     return;
   }
 
