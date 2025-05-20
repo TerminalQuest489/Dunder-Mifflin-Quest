@@ -1,5 +1,3 @@
-// main.js
-
 const DATABASE_URL =
   "https://raw.githubusercontent.com/TerminalQuest489/Dunder-Mifflin-Quest/main/data/dunder_mifflin_sales.json";
 
@@ -10,7 +8,7 @@ let achievements = [];
 let missions = [
   {
     question: "How many sales did Dwight Schrute make?",
-    validate: (rows) => rows.length === 5,
+    validate: (rows, answer) => rows.length === 5 && answer === "5",
     sqlHint: "SELECT * FROM sales WHERE employee = 'Dwight Schrute';",
     answerHint: "There are 5 rows with Dwight Schrute"
   },
@@ -81,6 +79,49 @@ function displayTableFromQuery(query, tableElementId) {
   }
 }
 
+function runQuery() {
+  const query = document.getElementById("query-input").value;
+  try {
+    const results = db.exec(query);
+    const container = document.getElementById("query-results");
+    container.innerHTML = "";
+
+    if (!results.length) {
+      container.textContent = "No results.";
+      return;
+    }
+
+    const { columns, values } = results[0];
+    const table = document.createElement("table");
+    table.classList.add("query-output-table");
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    columns.forEach(col => {
+      const th = document.createElement("th");
+      th.textContent = col;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    values.forEach(row => {
+      const tr = document.createElement("tr");
+      row.forEach(cell => {
+        const td = document.createElement("td");
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+  } catch (e) {
+    document.getElementById("query-results").textContent = `❌ Error: ${e.message}`;
+  }
+}
+
 function startMission() {
   document.getElementById("mission-question").textContent = missions[currentMission].question;
   document.getElementById("submit-answer").disabled = false;
@@ -106,6 +147,7 @@ function startTimer(seconds) {
 
 function evaluateAnswer() {
   const query = document.getElementById("query-input").value;
+  const finalAnswer = document.getElementById("final-answer").value.trim();
   let rows = [];
   try {
     const results = db.exec(query);
@@ -119,7 +161,7 @@ function evaluateAnswer() {
     return;
   }
 
-  const isCorrect = missions[currentMission].validate(rows);
+  const isCorrect = missions[currentMission].validate(rows, finalAnswer);
   if (isCorrect) {
     xp += 100;
     level++;
@@ -130,7 +172,9 @@ function evaluateAnswer() {
     if (currentMission < missions.length) {
       setTimeout(() => {
         document.getElementById("query-input").value = "";
+        document.getElementById("final-answer").value = "";
         document.getElementById("feedback").textContent = "";
+        document.getElementById("query-results").textContent = "";
         document.getElementById("current-level").textContent = currentMission + 1;
         startMission();
       }, 2000);
@@ -153,17 +197,46 @@ function updateStats() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   await loadData();
-  displayTableFromQuery("SELECT * FROM sales LIMIT 5;", "sales-table");
-
   document.getElementById("start-game-btn").disabled = false;
   document.getElementById("preview-data-btn").disabled = false;
-
   document.getElementById("start-game-btn").textContent = "🎮 Start Game";
   document.getElementById("preview-data-btn").textContent = "👀 Preview Sales Table";
 
   document.getElementById("preview-data-btn").addEventListener("click", () => {
-    displayTableFromQuery("SELECT * FROM sales;", "sales-table");
-    document.getElementById("preview-tables").classList.remove("hidden");
+    const preview = db.exec("SELECT * FROM sales LIMIT 10;");
+    const container = document.getElementById("preview-tables");
+    container.innerHTML = "";
+
+    if (preview.length > 0) {
+      const { columns, values } = preview[0];
+
+      const table = document.createElement("table");
+      table.classList.add("preview-table");
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      columns.forEach(col => {
+        const th = document.createElement("th");
+        th.textContent = col;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      values.forEach(row => {
+        const tr = document.createElement("tr");
+        row.forEach(cell => {
+          const td = document.createElement("td");
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+    }
+    container.classList.remove("hidden");
   });
 
   document.getElementById("start-game-btn").addEventListener("click", () => {
@@ -179,5 +252,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("submit-answer").addEventListener("click", () => {
     evaluateAnswer();
+  });
+
+  document.getElementById("run-query-btn").addEventListener("click", () => {
+    runQuery();
+  });
+
+  document.getElementById("query-input").addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      runQuery();
+    }
   });
 });
