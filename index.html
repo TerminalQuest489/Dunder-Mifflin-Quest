@@ -2,11 +2,13 @@
 <html lang="en" class="office-theme">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>📜 SQL Quest: The Office Edition</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="game-container">
+    <!-- Intro Screen -->
     <div id="intro-screen">
       <h1>📜 SQL Quest: The Office Edition</h1>
       <p>You're on a quest to become the <strong>World's Best Paper Salesman</strong>.</p>
@@ -22,6 +24,7 @@
       <button id="start-game-btn" disabled>🚀 Starting Game...</button>
     </div>
 
+    <!-- Game UI -->
     <div id="game-ui" style="display: none;">
       <h1>💼 Dunder Mifflin SQL Terminal</h1>
 
@@ -45,14 +48,14 @@
 
       <div id="mission-area">
         <h2>🎯 Mission <span id="current-level">1</span>: <span id="mission-question"></span></h2>
-        <button id="start-mission-btn">⏰ Start Mission</button>
+        <button id="start-mission-btn" style="display: none;">⏰ Start Mission</button>
         <div id="timer" class="hidden">⏰ Time left: <span id="time-left">0</span>s</div>
 
         <h3>🔍 Run Your SQL Query Below</h3>
-        <textarea id="query-input" placeholder="SELECT * FROM sales WHERE employee = 'Dwight';"></textarea>
+        <textarea id="query-input" placeholder="SELECT * FROM sales WHERE employee = 'Dwight Schrute';"></textarea>
 
         <h3>📝 Enter Your Final Answer</h3>
-        <input type="text" id="final-answer" placeholder="Type your answer here...">
+        <input type="text" id="final-answer" placeholder="Type your answer here..." />
         <button id="submit-answer" disabled>✅ Submit Answer</button>
         <div id="feedback"></div>
       </div>
@@ -60,8 +63,8 @@
   </div>
 
   <!-- Load sql.js from CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/sql-wasm.js"></script>
-<!-- Main JavaScript -->
-<script src="main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/sql-wasm.js"></script>
+  <!-- Load your main game logic -->
+  <script src="main.js"></script>
 </body>
 </html>
