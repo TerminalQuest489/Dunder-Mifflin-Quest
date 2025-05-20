@@ -118,7 +118,7 @@ function runQuery() {
     table.appendChild(tbody);
     container.appendChild(table);
   } catch (e) {
-    document.getElementById("query-results").textContent = ❌ Error: ${e.message};
+    document.getElementById("query-results").textContent = `❌ Error: ${e.message}`;
   }
 }
 
