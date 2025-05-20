@@ -1,5 +1,3 @@
-// main.js
-
 const DATABASE_URL =
   "https://raw.githubusercontent.com/TerminalQuest489/Dunder-Mifflin-Quest/main/data/dunder_mifflin_sales.json";
 
@@ -94,7 +92,6 @@ function runQuery() {
     }
 
     const { columns, values } = results[0];
-
     const table = document.createElement("table");
     table.classList.add("query-output-table");
 
@@ -226,12 +223,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     evaluateAnswer();
   });
 
-  // New: Run query button listener
   document.getElementById("run-query-btn").addEventListener("click", () => {
     runQuery();
   });
 
-  // New: Ctrl+Enter or Cmd+Enter runs the query
   document.getElementById("query-input").addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
