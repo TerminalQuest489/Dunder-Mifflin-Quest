@@ -1,177 +1,183 @@
-const dataUrl = "https://raw.githubusercontent.com/TerminalQuest489/Dunder-Mifflin-Quest/main/data/dunder_mifflin_sales.json";
+// main.js
 
-let db, xp = 0, level = 1, currentMission = 0;
-let missions = [];
+const DATABASE_URL =
+  "https://raw.githubusercontent.com/TerminalQuest489/Dunder-Mifflin-Quest/main/data/dunder_mifflin_sales.json";
 
-const xpDisplay = document.getElementById("xp");
-const levelDisplay = document.getElementById("level");
-const missionQuestion = document.getElementById("mission-question");
-const currentLevelDisplay = document.getElementById("current-level");
-const submitBtn = document.getElementById("submit-answer");
-const feedback = document.getElementById("feedback");
-const queryInput = document.getElementById("query-input");
-const finalAnswer = document.getElementById("final-answer");
-const previewBtn = document.getElementById("preview-data-btn");
-const previewTables = document.getElementById("preview-tables");
-const startGameBtn = document.getElementById("start-game-btn");
-
-const sampleQuotes = [
-  { quote: "I am Beyoncé, always.", author: "Michael Scott" },
-  { quote: "Bears. Beets. Battlestar Galactica.", author: "Jim Halpert" },
-  { quote: "Whenever I'm about to do something, I think, 'Would an idiot do that?' And if they would, I do not do that thing.", author: "Dwight Schrute" }
+let db;
+let xp = 0;
+let level = 1;
+let achievements = [];
+let missions = [
+  {
+    question: "How many sales did Dwight Schrute make?",
+    validate: (rows) => rows.length === 5,
+    sqlHint: "SELECT * FROM sales WHERE employee = 'Dwight Schrute';",
+    answerHint: "There are 5 rows with Dwight Schrute"
+  },
+  {
+    question: "What is the total sales amount for Jim Halpert?",
+    validate: (rows) => {
+      const sum = rows.reduce((acc, r) => acc + r.amount, 0);
+      return sum === 4340;
+    },
+    sqlHint: "SELECT * FROM sales WHERE employee = 'Jim Halpert';",
+    answerHint: "Add all 'amount' values for Jim Halpert"
+  },
+  {
+    question: "Which employee made the highest single sale?",
+    validate: (rows) => rows[0].employee === "Dwight Schrute" && rows[0].amount === 4950,
+    sqlHint: "SELECT * FROM sales ORDER BY amount DESC LIMIT 1;",
+    answerHint: "Look for the max amount"
+  }
 ];
 
-async function loadDatabase() {
-  const SQL = await initSqlJs({ locateFile: filename => `https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/${filename}` });
+let currentMission = 0;
+let timerInterval;
 
-  const response = await fetch(dataUrl);
+async function loadData() {
+  const response = await fetch(DATABASE_URL);
   const json = await response.json();
-  const sales = json.sales;
-
+  const SQL = await initSqlJs({ locateFile: filename => `https://cdn.jsdelivr.net/npm/sql.js@1.7.0/dist/${filename}` });
   db = new SQL.Database();
-  db.run(`CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT);`);
-
-  const stmt = db.prepare(`INSERT INTO sales VALUES (?, ?, ?, ?);`);
-  for (const row of sales) {
-    stmt.run([row.employee, row.product, row.amount, row.client]);
-  }
-  stmt.free();
-
-  db.run(`CREATE TABLE quotes (quote TEXT, author TEXT);`);
-  const quoteStmt = db.prepare(`INSERT INTO quotes VALUES (?, ?);`);
-  sampleQuotes.forEach(q => quoteStmt.run([q.quote, q.author]));
-  quoteStmt.free();
-
-  missions = generateMissions();
-  previewBtn.innerText = "👀 Preview Sales Table";
-  previewBtn.disabled = false;
-  startGameBtn.innerText = "🎮 Start Game";
-  startGameBtn.disabled = false;
+  db.run("CREATE TABLE sales (employee TEXT, product TEXT, amount INTEGER, client TEXT);");
+  const insert = db.prepare("INSERT INTO sales VALUES (?, ?, ?, ?);");
+  json.sales.forEach(row => insert.run([row.employee, row.product, row.amount, row.client]));
+  insert.free();
 }
 
-function generateMissions() {
-  return [
-    {
-      question: "How many sales did Dwight Schrute make?",
-      sql: "SELECT COUNT(*) as count FROM sales WHERE employee = 'Dwight Schrute';",
-      answer: "5",
-      xp: 10
-    },
-    {
-      question: "What was the total amount sold by Jim Halpert?",
-      sql: "SELECT SUM(amount) as total FROM sales WHERE employee = 'Jim Halpert';",
-      answer: "4340",
-      xp: 20
-    },
-    {
-      question: "Which client bought the most from Pam Beesly?",
-      sql: `SELECT client FROM sales WHERE employee = 'Pam Beesly' ORDER BY amount DESC LIMIT 1;`,
-      answer: "Amazon",
-      xp: 25
-    },
-    {
-      question: "How many unique employees made sales?",
-      sql: `SELECT COUNT(DISTINCT employee) as unique_employees FROM sales;`,
-      answer: "9",
-      xp: 10
-    },
-    {
-      question: "Which product did Michael Scott sell the most of (by total amount)?",
-      sql: `SELECT product FROM sales WHERE employee = 'Michael Scott' GROUP BY product ORDER BY SUM(amount) DESC LIMIT 1;`,
-      answer: "Notebooks",
-      xp: 25
-    }
-  ];
-}
-
-function runQuery(query) {
+function displayTableFromQuery(query, tableElementId) {
   try {
-    const result = db.exec(query);
-    if (result.length === 0) return [];
+    const results = db.exec(query);
+    const table = document.getElementById(tableElementId);
+    table.innerHTML = "";
+    if (!results.length) return;
+    const columns = results[0].columns;
+    const values = results[0].values;
 
-    const { columns, values } = result[0];
-    return values.map(row =>
-      Object.fromEntries(columns.map((col, i) => [col, row[i]]))
-    );
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    columns.forEach(col => {
+      const th = document.createElement("th");
+      th.textContent = col;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    const tbody = document.createElement("tbody");
+    values.forEach(row => {
+      const tr = document.createElement("tr");
+      row.forEach(cell => {
+        const td = document.createElement("td");
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+  } catch (err) {
+    console.error("Query error:", err);
+  }
+}
+
+function startMission() {
+  document.getElementById("mission-question").textContent = missions[currentMission].question;
+  document.getElementById("submit-answer").disabled = false;
+  startTimer(60);
+}
+
+function startTimer(seconds) {
+  const timerDisplay = document.getElementById("timer");
+  const timeLeft = document.getElementById("time-left");
+  timerDisplay.classList.remove("hidden");
+  let remaining = seconds;
+  timeLeft.textContent = remaining;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    remaining--;
+    timeLeft.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById("feedback").textContent = "⏰ Time’s up! Try again.";
+    }
+  }, 1000);
+}
+
+function evaluateAnswer() {
+  const query = document.getElementById("query-input").value;
+  let rows = [];
+  try {
+    const results = db.exec(query);
+    if (results.length > 0) {
+      const cols = results[0].columns;
+      const values = results[0].values;
+      rows = values.map(row => Object.fromEntries(row.map((v, i) => [cols[i], v])));
+    }
   } catch (e) {
-    feedback.textContent = "❌ Error in SQL: " + e.message;
-    return [];
+    document.getElementById("feedback").textContent = `❌ Error: ${e.message}`;
+    return;
+  }
+
+  const isCorrect = missions[currentMission].validate(rows);
+  if (isCorrect) {
+    xp += 100;
+    level++;
+    achievements.push(`✔️ Mission ${currentMission + 1}`);
+    document.getElementById("feedback").textContent = `✅ Correct! You've completed the mission.`;
+    updateStats();
+    currentMission++;
+    if (currentMission < missions.length) {
+      setTimeout(() => {
+        document.getElementById("query-input").value = "";
+        document.getElementById("feedback").textContent = "";
+        document.getElementById("current-level").textContent = currentMission + 1;
+        startMission();
+      }, 2000);
+    } else {
+      document.getElementById("mission-question").textContent = "🏆 All missions complete!";
+      document.getElementById("submit-answer").disabled = true;
+    }
+  } else {
+    document.getElementById("feedback").textContent = `❌ Incorrect. Hint: ${missions[currentMission].answerHint}`;
   }
 }
 
 function updateStats() {
-  xpDisplay.textContent = xp;
-  levelDisplay.textContent = level;
-  document.getElementById("xp-progress-bar").style.width = `${(xp % 100)}%`;
-  if (xp >= level * 100) {
-    level++;
-    feedback.innerHTML += "<br>🔥 Level up!";
-  }
+  document.getElementById("xp").textContent = xp;
+  document.getElementById("level").textContent = level;
+  document.getElementById("achievements").textContent = achievements.join(", ") || "None";
+  const bar = document.getElementById("xp-progress-bar");
+  bar.style.width = `${(xp % 100) + 1}%`;
 }
 
-submitBtn.addEventListener("click", () => {
-  const playerAnswer = finalAnswer.value.trim();
-  const mission = missions[currentMission];
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadData();
+  displayTableFromQuery("SELECT * FROM sales LIMIT 5;", "sales-table");
 
-  if (playerAnswer === mission.answer) {
-    feedback.innerHTML = `✅ Correct! You earned ${mission.xp} XP.`;
-    xp += mission.xp;
-    currentMission++;
-    updateStats();
-    if (currentMission < missions.length) {
-      loadMission();
-    } else {
-      missionQuestion.innerHTML = "🏆 You've completed all missions! Refresh to play again.";
-      submitBtn.disabled = true;
-    }
-  } else {
-    feedback.innerHTML = `❌ Incorrect. Try again!`;
-  }
-});
+  document.getElementById("start-game-btn").disabled = false;
+  document.getElementById("preview-data-btn").disabled = false;
 
-function loadMission() {
-  const mission = missions[currentMission];
-  currentLevelDisplay.textContent = currentMission + 1;
-  missionQuestion.textContent = mission.question;
-  queryInput.value = mission.sql;
-  finalAnswer.value = "";
-  feedback.textContent = "";
-  submitBtn.disabled = false;
-}
+  document.getElementById("start-game-btn").textContent = "🎮 Start Game";
+  document.getElementById("preview-data-btn").textContent = "👀 Preview Sales Table";
 
-document.getElementById("start-game-btn").addEventListener("click", () => {
-  document.getElementById("intro-screen").style.display = "none";
-  document.getElementById("game-ui").style.display = "block";
-  loadMission();
-});
-
-previewBtn.addEventListener("click", () => {
-  const rows = runQuery("SELECT * FROM sales LIMIT 5;");
-  if (rows.length === 0) return;
-  const table = document.createElement("table");
-
-  const headerRow = document.createElement("tr");
-  Object.keys(rows[0]).forEach(key => {
-    const th = document.createElement("th");
-    th.textContent = key;
-    headerRow.appendChild(th);
-  });
-  table.appendChild(headerRow);
-
-  rows.forEach(row => {
-    const tr = document.createElement("tr");
-    Object.values(row).forEach(val => {
-      const td = document.createElement("td");
-      td.textContent = val;
-      tr.appendChild(td);
-    });
-    table.appendChild(tr);
+  document.getElementById("preview-data-btn").addEventListener("click", () => {
+    displayTableFromQuery("SELECT * FROM sales;", "sales-table");
+    document.getElementById("preview-tables").classList.remove("hidden");
   });
 
-  previewTables.innerHTML = "";
-  previewTables.appendChild(table);
-  previewTables.classList.remove("hidden");
-});
+  document.getElementById("start-game-btn").addEventListener("click", () => {
+    document.getElementById("intro-screen").style.display = "none";
+    document.getElementById("game-ui").style.display = "block";
+    document.getElementById("current-level").textContent = currentMission + 1;
+    startMission();
+  });
 
-// Kick off everything
-loadDatabase();
+  document.getElementById("start-mission-btn").addEventListener("click", () => {
+    startMission();
+  });
+
+  document.getElementById("submit-answer").addEventListener("click", () => {
+    evaluateAnswer();
+  });
+});
