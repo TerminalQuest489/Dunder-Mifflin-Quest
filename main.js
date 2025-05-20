@@ -81,6 +81,50 @@ function displayTableFromQuery(query, tableElementId) {
   }
 }
 
+function runQuery() {
+  const query = document.getElementById("query-input").value;
+  try {
+    const results = db.exec(query);
+    const container = document.getElementById("query-results");
+    container.innerHTML = "";
+
+    if (!results.length) {
+      container.textContent = "No results.";
+      return;
+    }
+
+    const { columns, values } = results[0];
+
+    const table = document.createElement("table");
+    table.classList.add("query-output-table");
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    columns.forEach(col => {
+      const th = document.createElement("th");
+      th.textContent = col;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    values.forEach(row => {
+      const tr = document.createElement("tr");
+      row.forEach(cell => {
+        const td = document.createElement("td");
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+  } catch (e) {
+    document.getElementById("query-results").textContent = `❌ Error: ${e.message}`;
+  }
+}
+
 function startMission() {
   document.getElementById("mission-question").textContent = missions[currentMission].question;
   document.getElementById("submit-answer").disabled = false;
@@ -131,6 +175,7 @@ function evaluateAnswer() {
       setTimeout(() => {
         document.getElementById("query-input").value = "";
         document.getElementById("feedback").textContent = "";
+        document.getElementById("query-results").textContent = "";
         document.getElementById("current-level").textContent = currentMission + 1;
         startMission();
       }, 2000);
@@ -179,5 +224,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("submit-answer").addEventListener("click", () => {
     evaluateAnswer();
+  });
+
+  // New: Run query button listener
+  document.getElementById("run-query-btn").addEventListener("click", () => {
+    runQuery();
+  });
+
+  // New: Ctrl+Enter or Cmd+Enter runs the query
+  document.getElementById("query-input").addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      runQuery();
+    }
   });
 });
