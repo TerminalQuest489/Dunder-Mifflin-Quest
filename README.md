@@ -63,41 +63,38 @@ https://terminalquest489.github.io/Dunder-Mifflin-Quest/
 }
 
 
-✅ You query this data in real-time using SELECT, JOIN, GROUP BY, and more!
-
 🏆 Features
 ✅ In-browser SQL Editor — write and run SQL queries instantly
-
 ✅ XP System — level up as you complete missions
-
 ✅ Timed Missions & Trick Questions — challenge your skills
-
 ✅ Hint System — get help when you're stuck
-
 ✅ Gamified Learning — learn by solving, not by memorizing
 
 🧑‍💻 Contributing
 Want to add new missions or features?
 
-Fork this repo 🍴
+🍴 Fork this repo
 
-Clone your fork
+💻 Clone your fork
 
-Make your changes (missions, UI, new data...)
+🛠️ Make your changes (missions, UI, new data...)
 
-Submit a PR!
+📬 Submit a PR!
 
 👋 Connect
 Created by @TerminalQuest489
 Questions? Ideas? Open an issue or submit a PR!
 
+“Bears. Beets. Battlestar Galactica. SQL.”
+— Dwight Schrute, Assistant to the Regional Database Administrator 🧑‍💼
 
----
+💡 Want to Level Up the README?
+Let me know if you'd like help adding:
 
-Let me know if you'd like to include:
+📸 Screenshots or GIF demo
 
-- 📸 Screenshots or GIF demo
-- 🏁 Progress bar or leaderboard
-- 🌈 Theme customization instructions
+🏁 Progress bar or leaderboard
 
-I can help you level it up even further!
+🌈 Theme customization instructions
+
+I'm happy to assist!
