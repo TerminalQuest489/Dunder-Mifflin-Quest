@@ -7,25 +7,37 @@ let level = 1;
 let achievements = [];
 let missions = [
   {
-    question: "How many sales did Dwight Schrute make?",
-    validate: (rows, answer) => rows.length === 5 && answer === "5",
-    sqlHint: "SELECT * FROM sales WHERE employee = 'Dwight Schrute';",
-    answerHint: "There are 5 rows with Dwight Schrute"
+    question: "How many Clients did Dwight Schrute sell in total?",
+    validate: (rows, answer) => {
+      const expected = 5;
+      const flatValues = rows.flatMap(Object.values);
+      return flatValues.includes(expected) || flatValues.includes("5") || answer === "5";
+    },
+    sqlHint: "SELECT COUNT(*) FROM sales WHERE employee = 'Dwight Schrute';",
+    answerHint: "There are 5 sales made by Dwight Schrute"
   },
   {
     question: "What is the total sales amount for Jim Halpert?",
-    validate: (rows) => {
-      const sum = rows.reduce((acc, r) => acc + r.amount, 0);
-      return sum === 4340;
+    validate: (rows, answer) => {
+      const expected = 4340;
+      const flatValues = rows.flatMap(Object.values);
+      return flatValues.includes(expected) || flatValues.includes("4340") || answer === "4340";
     },
-    sqlHint: "SELECT * FROM sales WHERE employee = 'Jim Halpert';",
-    answerHint: "Add all 'amount' values for Jim Halpert"
+    sqlHint: "SELECT SUM(amount) FROM sales WHERE employee = 'Jim Halpert';",
+    answerHint: "Sum the amounts for Jim Halpert"
   },
   {
     question: "Which employee made the highest single sale?",
-    validate: (rows) => rows[0].employee === "Dwight Schrute" && rows[0].amount === 4950,
+    validate: (rows, answer) => {
+      const expectedEmployee = "Dwight Schrute";
+      const expectedAmount = 4950;
+      return rows.some(row =>
+        Object.values(row).includes(expectedEmployee) &&
+        Object.values(row).includes(expectedAmount)
+      );
+    },
     sqlHint: "SELECT * FROM sales ORDER BY amount DESC LIMIT 1;",
-    answerHint: "Look for the max amount"
+    answerHint: "Find the row with the highest amount"
   }
 ];
 
