@@ -27,18 +27,30 @@ https://terminalquest489.github.io/Dunder-Mifflin-Quest/
 ---
 
 ## 🗂️ Project Structure
-
+```
 📁 Dunder-Mifflin-Quest
-├── 📄 index.html # Main HTML game page
-├── 🎨 style.css # Visual styling
-├── 🧠 script.js # Game logic, SQL.js integration
-├── 📁 data/
-│ └── 📄 dunder_mifflin_sales.json # Fictional sales dataset
-├── 📄 missions.json # SQL missions, hints, answers
-└── 📄 README.md # This file!
+├── index.html # Main HTML game page
+├── style.css # Visual styling
+├── script.js # Game logic, SQL.js integration
+├── Data/
+│ └── dunder_mifflin_sales.json # Fictional sales dataset
+├── missions.json # SQL missions, hints, answers
+└── README.md # This file!
+```
+---
 
+## 🔍 Example Dataset
 
-
+```json
+{
+  "employees": [
+    { "id": 1, "name": "Jim Halpert", "region": "Northeast" }
+  ],
+  "sales": [
+    { "id": 101, "employee_id": 1, "amount": 3000, "date": "2023-01-10" }
+  ]
+}
+```
 ---
 
 ## ⚙️ Tech Stack
@@ -81,18 +93,3 @@ Let me know if you'd like help adding:
 🏁 Progress bar or leaderboard
 
 🌈 Theme customization instructions
-
-
----
-
-## 🔍 Example Dataset
-
-```json
-{
-  "employees": [
-    { "id": 1, "name": "Jim Halpert", "region": "Northeast" }
-  ],
-  "sales": [
-    { "id": 101, "employee_id": 1, "amount": 3000, "date": "2023-01-10" }
-  ]
-}
