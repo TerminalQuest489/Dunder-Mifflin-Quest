@@ -48,21 +48,6 @@ https://terminalquest489.github.io/Dunder-Mifflin-Quest/
 - 🧾 **JSON-based Dataset** — hosted on GitHub
 - 🌐 **GitHub Pages** — no backend required
 
----
-
-## 🔍 Example Dataset
-
-```json
-{
-  "employees": [
-    { "id": 1, "name": "Jim Halpert", "region": "Northeast" }
-  ],
-  "sales": [
-    { "id": 101, "employee_id": 1, "amount": 3000, "date": "2023-01-10" }
-  ]
-}
-
-
 🏆 Features
 ✅ In-browser SQL Editor — write and run SQL queries instantly
 ✅ XP System — level up as you complete missions
@@ -97,4 +82,17 @@ Let me know if you'd like help adding:
 
 🌈 Theme customization instructions
 
-I'm happy to assist!
+
+---
+
+## 🔍 Example Dataset
+
+```json
+{
+  "employees": [
+    { "id": 1, "name": "Jim Halpert", "region": "Northeast" }
+  ],
+  "sales": [
+    { "id": 101, "employee_id": 1, "amount": 3000, "date": "2023-01-10" }
+  ]
+}
